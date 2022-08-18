@@ -1,3 +1,39 @@
+# function belief_reward(pomdp::RoverPOMDP, b::RoverBelief, a::Symbol, bp::RoverBelief)
+#     r = 0.0
+#
+#     if isterminal(pomdp, b)
+#         return 0
+#     else
+#         if b.location_belief.X == []
+#             μ_init, ν_init = query_no_data(b.location_belief)
+#         else
+#             μ_init, ν_init, S_init = query(b.location_belief)
+#         end
+#
+#         if bp.location_belief.X == []
+#             μ_post, ν_post, = query_no_data(bp.location_belief)
+#         else
+#             μ_post, ν_post, S_post = query(bp.location_belief)
+#         end
+#
+#         variance_reduction = (sum(ν_init) - sum(ν_post))
+#         # TODO: pass lamda in as a parameter to pomdp struct
+#         r += 1*variance_reduction
+#
+#         if a == :drill
+#             if round(μ_init[b.pos], digits=1) in b.drill_samples
+#                 r += pomdp.repeat_sample_penalty
+#             else
+#                 r +=  pomdp.new_sample_reward
+#             end
+#         else
+#             r +=  0
+#         end
+#     end
+#
+#     return r
+# end
+
 function belief_reward(pomdp::RoverPOMDP, b::RoverBelief, a::Symbol, bp::RoverBelief)
     r = 0.0
 
@@ -11,23 +47,34 @@ function belief_reward(pomdp::RoverPOMDP, b::RoverBelief, a::Symbol, bp::RoverBe
         end
 
         if bp.location_belief.X == []
-            μ_post, ν_post, = query_no_data(bp.location_belief)
+            μ_post, ν_post = query_no_data(bp.location_belief)
         else
             μ_post, ν_post, S_post = query(bp.location_belief)
         end
 
-        variance_reduction = (sum(ν_init) - sum(ν_post))
-        # TODO: pass lamda in as a parameter to pomdp struct
-        r += 3*variance_reduction
 
         if a == :drill
-            if round(μ_init[b.pos], digits=1) in b.drill_samples
+            mu = μ_init[b.pos]
+            σ = sqrt(ν_init[b.pos])
+            z_score = 1.5 #1.96 # 95% confidence is too conservative for drilling
+            if any([mu-z_score*σ <= d <= mu+z_score*σ for d in b.drill_samples])
+            # if round(μ_init[b.pos], digits=1) in b.drill_samples
                 r += pomdp.repeat_sample_penalty
+            # this is for when we have already drilled in an area so the confidence region shrinks
+            elseif round(μ_init[b.pos], digits=1) in b.drill_samples
+                r += pomdp.repeat_sample_penalty
+
+            #XXX: hack since julia does not return true for -0.0 in set with 0.0
+            elseif round(μ_init[b.pos], digits=1)==0.0 && 0.0 in b.drill_samples
+                r += pomdp.repeat_sample_penalty
+
             else
                 r +=  pomdp.new_sample_reward
             end
         else
-            r +=  0
+            variance_reduction = (sum(ν_init) - sum(ν_post))
+            # TODO: pass lamda in as a parameter to pomdp struct
+            r += 1*variance_reduction
         end
     end
 

@@ -3,8 +3,10 @@ using Colors
 function plot_trial(true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, trial_num)
 
 	# increase GP query resolution for plotting
-	# k = with_lengthscale(SqExponentialKernel(), 0.5) + with_lengthscale(MaternKernel(), 0.5)# NOTE: check length scale
+	# k = with_lengthscale(SqExponentialKernel(), 1.0) + with_lengthscale(MaternKernel(), 1.0)# NOTE: check length scale
 	k = with_lengthscale(SqExponentialKernel(), 1.0) # NOTE: check length scale
+	# k = with_lengthscale(SqExponentialKernel(), 1.0) + with_lengthscale(MaternKernel(), 1.0)# NOTE: check length scale
+
 	plot_scale = 1:0.18:10
 	X_plot = [[i,j] for i = plot_scale, j = plot_scale]
     plot_size = size(X_plot)
@@ -102,8 +104,10 @@ end
 function plot_trial_with_mean(true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, trial_num)
 
 	# increase GP query resolution for plotting
-	# k = with_lengthscale(SqExponentialKernel(), 0.5) + with_lengthscale(MaternKernel(), 0.5)# NOTE: check length scale
+	# k = with_lengthscale(SqExponentialKernel(), 1.0) + with_lengthscale(MaternKernel(), 1.0)# NOTE: check length scale
 	k = with_lengthscale(SqExponentialKernel(), 1.0) # NOTE: check length scale
+	# k = with_lengthscale(SqExponentialKernel(), 1.0) + with_lengthscale(MaternKernel(), 1.0)# NOTE: check length scale
+
 	plot_scale = 1:0.18:10
 	X_plot = [[i,j] for i = plot_scale, j = plot_scale]
     plot_size = size(X_plot)

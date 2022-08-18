@@ -89,11 +89,6 @@ function run_rover_bmdp(rng::RNG, bmdp::BeliefMDP, policy, isterminal::Function)
             break
         end
 
-		# println("State: ", convert_pos_idx_2_pos_coord(bmdp.pomdp, belief_state.pos))
-		# println("Cost Expended: ", belief_state.cost_expended)
-		# println("Actions available: ", actions(bmdp.pomdp, belief_state))
-		# println("Action: ", a)
-
 		new_belief_state, sim_reward = POMDPs.gen(bmdp, belief_state, a, rng)
 
 		# just use these to get the true reward NOT the simulated reward
@@ -101,29 +96,51 @@ function run_rover_bmdp(rng::RNG, bmdp::BeliefMDP, policy, isterminal::Function)
 		sp = RoverState(new_belief_state.pos, new_belief_state.visited, bmdp.pomdp.true_map, new_belief_state.cost_expended, new_belief_state.drill_samples)
 		true_reward = reward(bmdp.pomdp, s, a, sp)
 
-		# println("Reward: ", true_reward)
-		# println("True Value: ", bmdp.pomdp.true_map[new_belief_state.pos])
-		# println("Drill Samples: ", new_belief_state.drill_samples)
-		# println("")
+		if a == :drill
+			println("State: ", convert_pos_idx_2_pos_coord(bmdp.pomdp, belief_state.pos))
+			println("Cost Expended: ", belief_state.cost_expended)
+			println("Actions available: ", actions(bmdp.pomdp, belief_state))
+			println("Action: ", a)
+			println("True reward: ", true_reward)
+			println("Sim reward: ", sim_reward)
+			println("True Value: ", bmdp.pomdp.true_map[new_belief_state.pos])
+
+			if belief_state.location_belief.X == []
+	            μ_init, ν_init = query_no_data(belief_state.location_belief)
+	        else
+	            μ_init, ν_init, S_init = query(belief_state.location_belief)
+	        end
+			if new_belief_state.location_belief.X == []
+				μ_post, ν_post = query_no_data(new_belief_state.location_belief)
+			else
+				μ_post, ν_post, S_post = query(new_belief_state.location_belief)
+			end
+			println("Mean Value Before Drill: ", μ_init[s.pos])
+			println("Mean Value After Drill: ", μ_post[s.pos])
+
+			println("Drill Samples: ", new_belief_state.drill_samples)
+			println("")
+		end
+
+
+        # new_state = generate_s(pomdp, state, a, rng)
+        # loc_reward = reward(pomdp, state, a, new_state)
+        # obs = generate_o(pomdp, state, a, new_state, rng)
 		#
-        # # new_state = generate_s(pomdp, state, a, rng)
-        # # loc_reward = reward(pomdp, state, a, new_state)
-        # # obs = generate_o(pomdp, state, a, new_state, rng)
+		# # println("Reward: ", loc_reward)
+		# # println("Observation: ", obs)
+		# # println("True Value: ", pomdp.true_map[new_state.pos])
+		# # println("Drill Samples: ", new_state.drill_samples)
 		# #
-		# # # println("Reward: ", loc_reward)
-		# # # println("Observation: ", obs)
-		# # # println("True Value: ", pomdp.true_map[new_state.pos])
-		# # # println("Drill Samples: ", new_state.drill_samples)
-		# # #
-		# # # # println("Particles: ", belief_state.location_belief.particles[:, new_state.pos])
-		# # # # println("Weights: ", belief_state.location_belief.weights[:, new_state.pos])
-		# # # println("")
-		# #
-        # # belief_state = update_belief(pomdp, belief_state, a, obs, rng)
-		#
-		# # println("New Particles: ", belief_state.location_belief.particles[:, new_state.pos])
-		# # println("New Weights: ", belief_state.location_belief.weights[:, new_state.pos])
+		# # # println("Particles: ", belief_state.location_belief.particles[:, new_state.pos])
+		# # # println("Weights: ", belief_state.location_belief.weights[:, new_state.pos])
 		# # println("")
+		#
+        # belief_state = update_belief(pomdp, belief_state, a, obs, rng)
+
+		# println("New Particles: ", belief_state.location_belief.particles[:, new_state.pos])
+		# println("New Weights: ", belief_state.location_belief.weights[:, new_state.pos])
+		# println("")
 
         total_reward += true_reward
         belief_state = new_belief_state
@@ -146,7 +163,7 @@ end
 
 
 function get_gp_bmdp_policy(bmdp, rng, max_depth=20, queries = 100)
-	planner = solve(MCTS.DPWSolver(depth=max_depth, n_iterations=queries, rng=rng, k_state=2.0, k_action=10000.0, alpha_state=0.5), bmdp)
+	planner = solve(MCTS.DPWSolver(depth=max_depth, n_iterations=queries, rng=rng, k_state=0.5, k_action=10000.0, alpha_state=0.5), bmdp)
 	# planner = solve(MCTSSolver(depth=max_depth, n_iterations=queries, rng=rng), bmdp)
 
 	return b -> action(planner, b)
@@ -154,7 +171,7 @@ end
 
 function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map_size::Tuple{Int, Int}=(10,10), seed::Int64=1234, num_graph_trials=40, total_budget = 100.0)
 
-	# k = with_lengthscale(SqExponentialKernel(), 0.7) + with_lengthscale(MaternKernel(), 1.0)# NOTE: check length scale
+	# k = with_lengthscale(SqExponentialKernel(), 1.0) + with_lengthscale(MaternKernel(), 1.0)# NOTE: check length scale
 	k = with_lengthscale(SqExponentialKernel(), 1.0) # NOTE: check length scale
     m(x) = 0.5 # default to 0.5 in the middle of the sample spectrum
     X_query = [[i,j] for i = 1:10, j = 1:10]
@@ -178,10 +195,8 @@ function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map
         pomdp = RoverPOMDP(true_map=true_map, f_prior=f_prior, cost_budget=total_budget, sample_types=sample_types = collect(0:(1/number_of_sample_types):(1-1/number_of_sample_types)), rng=rng)
 
 		bmdp = BeliefMDP(pomdp, RoverBeliefUpdater(pomdp), belief_reward)
-        # ns = NaiveSolver(isrs_env, total_budget)
 
         gp_bmdp_isterminal(s) = POMDPs.isterminal(pomdp, s)
-        # naive_isterminal(s) = MultimodalIPP.isterminal_naive(ns, s)
 
 		depth = 5
 		gp_bmdp_policy = get_gp_bmdp_policy(bmdp, rng, depth, 100)
@@ -189,37 +204,10 @@ function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map
 		gp_mcts_reward = 0
 
 		gp_mcts_reward, state_hist, gp_hist, action_hist, reward_hist, total_reward_hist = run_rover_bmdp(rng, bmdp, gp_bmdp_policy, gp_bmdp_isterminal)
-		plot_trial(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
-		plot_trial_with_mean(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
+		# plot_trial(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
+		# plot_trial_with_mean(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
 		@show gp_mcts_reward
 
-		try
-			# pomcp_gcb_reward, state_hist, location_states_hist, action_hist, reward_hist = run_rover_bmdp(rng, pomdp, pomcp_gcb_policy, pomcp_isterminal)
-			# @show pomcp_gcb_reward
-			#
-			# pomcp_basic_reward, state_hist, location_states_hist, action_hist, reward_hist  = run_rover_bmdp(rng, pomdp, pomcp_basic_policy, pomcp_isterminal)
-			# @show pomcp_basic_reward
-
-			# pomcp_gcb_reward, state_hist, location_states_hist, action_hist, reward_hist = run_rover_bmdp(rng, pomdp, pomcp_gcb_policy, pomcp_isterminal)
-			# plot_trial(state_hist, location_states_hist, action_hist, reward_hist, i, "gcb")
-			# @show pomcp_gcb_reward
-
-
-			# pomcp_basic_reward, state_hist, location_states_hist, action_hist, reward_hist = run_rover_bmdp(rng, pomdp, pomcp_gcb_policy, pomcp_isterminal)
-			# pomcp_basic_reward = run_rover_bmdp(rng, pomdp, pomcp_basic_policy, pomcp_isterminal)
-
-			# plot_trial(state_hist, location_states_hist, action_hist, reward_hist, i, "basic")
-			# @show pomcp_basic_reward
-		catch y
-			println("CAUGHT")
-			if isa(y, InterruptException)
-                throw(InterruptException)
-            end
-            pomcp_gcb_reward = 0.0
-            pomcp_basic_reward = 0.0
-            i = i+1
-            continue
-		end
 
         i = i+1
         idx = idx+1
@@ -229,17 +217,7 @@ function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map
 
 	@show mean(gp_mcts_rewards)
 
-
-    # outfile_pomcp_gcb = string("isrs-pomcp-gcb-",pref,".json")
-    # open(outfile_pomcp_gcb,"w") do f
-    #     JSON.print(f,Dict("rewards"=>pomcp_gcb_rewards),2)
-    # end
-	#
-    # outfile_pomcp_basic = string("isrs-pomcp-basic-",pref,".json")
-    # open(outfile_pomcp_basic,"w") do f
-    #     JSON.print(f,Dict("rewards"=>pomcp_basic_rewards),2)
-    # end
 end
 
 
-solver_test_RoverBMDP("test", number_of_sample_types=10, total_budget = 60.0)
+solver_test_RoverBMDP("test", number_of_sample_types=10, total_budget = 100.0)
