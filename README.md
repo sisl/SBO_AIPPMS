@@ -3,7 +3,7 @@ Gaussian Process-based Adaptive Informative Path Planning with Multimodal Sensin
 
 ![](https://github.com/josh0tt/GP_AIPPMS/blob/main/img/Figure1.jpg)
 
-
+<!--
 # GPAIPPMS
 
 This repository contains the code for the publication
@@ -24,3 +24,4 @@ This repository contains the code for the publication
 ```
 
 The code uses the [JuliaPOMDP](https://github.com/JuliaPOMDP/POMDPs.jl) framework. All necessary packages are installed by following the setup instructions.
+ -->
