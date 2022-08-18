@@ -48,7 +48,7 @@ end
     tprob::Float64                         = 1
     discount::Float64                      = 1.0
     σ_drill::Float64                       = 1e-9
-    σ_spec::Float64                        = 1.0
+    σ_spec::Float64                        = 0.1
     drill_time::Float64                    = 3.0 # takes 10 time units to drill vs. 1.0 to move to neighbor cell TODO: include uncertain drill time
     cost_budget::Float64                   = 300.0
     step_size::Int64                       = 1 # scales the step the agent takes at each iteration

@@ -38,8 +38,8 @@ function query_no_data(GP::GaussianProcess)
 end
 
 function query(GP::GaussianProcess)
-    # tmp = GP.KXqX / (GP.KXX + diagm(GP.ν .+ 1e-6))
-    tmp = GP.KXqX / (GP.KXX + Diagonal(GP.ν .+ 1e-6))
+    # tmp = GP.KXqX / (GP.KXX + diagm(GP.ν))
+    tmp = GP.KXqX / (GP.KXX + Diagonal(GP.ν))
     μₚ = GP.mXq + tmp*(GP.y - μ(GP.X, GP.m))
     S = GP.KXqXq - tmp*GP.KXqX'
     νₚ = diag(S) .+ eps() # eps prevents numerical issues
