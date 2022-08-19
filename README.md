@@ -22,7 +22,6 @@ This repository contains the code for the publication
 }
 ```
 
-The code uses the [JuliaPOMDP](https://github.com/JuliaPOMDP/POMDPs.jl) framework. All necessary packages are installed by following the setup instructions.
  -->
 
 # Description
@@ -30,7 +29,7 @@ The code uses the [JuliaPOMDP](https://github.com/JuliaPOMDP/POMDPs.jl) framewor
 We compare our formulation of a Gaussian Process Belief MDP using MCTS-DPW with that of the POMDP formulation using POMCP with different rollout policies as first presented in: 
 > Choudhury, Shushman, Nate Gruver, and Mykel J. Kochenderfer. "Adaptive informative path planning with multimodal sensing." Proceedings of the International Conference on Automated Planning and Scheduling. Vol. 30. 2020.
 
-We have included their code in this repository for future benchmarking with the permission of the authors.
+We have included their code in this repository for future benchmarking with the permission of the authors. The code uses the [JuliaPOMDP](https://github.com/JuliaPOMDP/POMDPs.jl) framework. 
 
 # Rover Exploration
 
