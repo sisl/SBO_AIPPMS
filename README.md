@@ -40,6 +40,8 @@ Gaussian Process Belief MDP formulation using MCTS-DPW
   <img alt="Variance" src="https://github.com/josh0tt/GP_AIPPMS/blob/main/img/var.gif" width="45%">
 </p>
 
+INCLUDE TABLE WITH RESULTS 
+
 POMCP with Random Rollout Policy
 
 POMCP with Generalized Cost-Benefit Rollout Policy
@@ -47,6 +49,8 @@ POMCP with Generalized Cost-Benefit Rollout Policy
 # Information Rock Sample
 
 Gaussian Process Belief MDP formulation using MCTS-DPW
+
+INCLUDE TABLE WITH RESULTS 
 
 POMCP with Random Rollout Policy
 
