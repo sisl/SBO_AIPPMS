@@ -25,3 +25,8 @@ This repository contains the code for the publication
 
 The code uses the [JuliaPOMDP](https://github.com/JuliaPOMDP/POMDPs.jl) framework. All necessary packages are installed by following the setup instructions.
  -->
+
+# Examples
+![](https://github.com/josh0tt/GP_AIPPMS/blob/main/img/mean.gif)
+![](https://github.com/josh0tt/GP_AIPPMS/blob/main/img/var.gif)
+
