@@ -28,7 +28,7 @@ The code uses the [JuliaPOMDP](https://github.com/JuliaPOMDP/POMDPs.jl) framewor
 
 # Rover Exploration
 <p align="center">
-  <img alt="Mean" src="https://github.com/josh0tt/GP_AIPPMS/blob/main/img/mean.gif" width="65%">
+  <img alt="Mean" src="https://github.com/josh0tt/GP_AIPPMS/blob/main/img/mean.gif" width="55%">
 &nbsp; &nbsp; &nbsp; &nbsp;
-  <img alt="Variance" src="https://github.com/josh0tt/GP_AIPPMS/blob/main/img/var.gif" width="65%">
+  <img alt="Variance" src="https://github.com/josh0tt/GP_AIPPMS/blob/main/img/var.gif" width="55%">
 </p>
