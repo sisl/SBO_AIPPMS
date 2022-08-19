@@ -26,9 +26,9 @@ This repository contains the code for the publication
 The code uses the [JuliaPOMDP](https://github.com/JuliaPOMDP/POMDPs.jl) framework. All necessary packages are installed by following the setup instructions.
  -->
 
-# Examples
+# Rover Exploration
 <p align="center">
-  <img alt="Light" src="https://github.com/josh0tt/GP_AIPPMS/blob/main/img/mean.gif" width="45%">
+  <img alt="Mean" src="https://github.com/josh0tt/GP_AIPPMS/blob/main/img/mean.gif" width="65%">
 &nbsp; &nbsp; &nbsp; &nbsp;
-  <img alt="Light" src="https://github.com/josh0tt/GP_AIPPMS/blob/main/img/var.gif" width="45%">
+  <img alt="Variance" src="https://github.com/josh0tt/GP_AIPPMS/blob/main/img/var.gif" width="65%">
 </p>
