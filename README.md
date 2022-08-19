@@ -27,6 +27,8 @@ The code uses the [JuliaPOMDP](https://github.com/JuliaPOMDP/POMDPs.jl) framewor
  -->
 
 # Rover Exploration
+
+Gaussian Process Belief MDP formulation using MCTS-DPW
 <p align="center">
   <img alt="Mean" src="https://github.com/josh0tt/GP_AIPPMS/blob/main/img/mean.gif" width="45%">
 &nbsp; &nbsp; &nbsp; &nbsp;
