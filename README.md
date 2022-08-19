@@ -27,4 +27,11 @@ The code uses the [JuliaPOMDP](https://github.com/JuliaPOMDP/POMDPs.jl) framewor
  -->
 
 # Examples
+<p align="center">
+  <img alt="Light" src="https://github.com/josh0tt/GP_AIPPMS/blob/main/img/mean.gif" width="45%">
+&nbsp; &nbsp; &nbsp; &nbsp;
+  <img alt="Dark" src="[./dark.png](https://github.com/josh0tt/GP_AIPPMS/blob/main/img/mean.gif)" width="45%">
+</p>
+
 ![](https://github.com/josh0tt/GP_AIPPMS/blob/main/img/mean.gif =20%x)![](https://github.com/josh0tt/GP_AIPPMS/blob/main/img/var.gif =20%x)
+![](image1.png "title-1" =20%x) ![alt-text-2](image2.png "title-2" =75%x)
