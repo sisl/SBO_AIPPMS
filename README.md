@@ -27,6 +27,5 @@ The code uses the [JuliaPOMDP](https://github.com/JuliaPOMDP/POMDPs.jl) framewor
  -->
 
 # Examples
-![](https://github.com/josh0tt/GP_AIPPMS/blob/main/img/mean.gif)
-![](https://github.com/josh0tt/GP_AIPPMS/blob/main/img/var.gif)
+![](https://github.com/josh0tt/GP_AIPPMS/blob/main/img/mean.gif)(https://github.com/josh0tt/GP_AIPPMS/blob/main/img/var.gif)
 
