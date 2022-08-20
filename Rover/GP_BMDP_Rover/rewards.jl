@@ -56,7 +56,7 @@ function belief_reward(pomdp::RoverPOMDP, b::RoverBelief, a::Symbol, bp::RoverBe
         if a == :drill
             mu = μ_init[b.pos]
             σ = sqrt(ν_init[b.pos])
-            z_score = 1.3 #1.96 # 95% confidence is too conservative for drilling
+            z_score = 1.4 #1.96 # 95% confidence is too conservative for drilling
             if any([mu-z_score*σ <= d <= mu+z_score*σ for d in b.drill_samples])
             # if round(μ_init[b.pos], digits=1) in b.drill_samples
                 r += pomdp.repeat_sample_penalty

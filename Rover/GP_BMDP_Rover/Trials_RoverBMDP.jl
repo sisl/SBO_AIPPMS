@@ -96,31 +96,31 @@ function run_rover_bmdp(rng::RNG, bmdp::BeliefMDP, policy, isterminal::Function)
 		sp = RoverState(new_belief_state.pos, new_belief_state.visited, bmdp.pomdp.true_map, new_belief_state.cost_expended, new_belief_state.drill_samples)
 		true_reward = reward(bmdp.pomdp, s, a, sp)
 
-		if a == :drill
-			println("State: ", convert_pos_idx_2_pos_coord(bmdp.pomdp, belief_state.pos))
-			println("Cost Expended: ", belief_state.cost_expended)
-			println("Actions available: ", actions(bmdp.pomdp, belief_state))
-			println("Action: ", a)
-			println("True reward: ", true_reward)
-			println("Sim reward: ", sim_reward)
-			println("True Value: ", bmdp.pomdp.true_map[new_belief_state.pos])
-
-			if belief_state.location_belief.X == []
-	            μ_init, ν_init = query_no_data(belief_state.location_belief)
-	        else
-	            μ_init, ν_init, S_init = query(belief_state.location_belief)
-	        end
-			if new_belief_state.location_belief.X == []
-				μ_post, ν_post = query_no_data(new_belief_state.location_belief)
-			else
-				μ_post, ν_post, S_post = query(new_belief_state.location_belief)
-			end
-			println("Mean Value Before Drill: ", μ_init[s.pos])
-			println("Mean Value After Drill: ", μ_post[s.pos])
-
-			println("Drill Samples: ", new_belief_state.drill_samples)
-			println("")
-		end
+		# if a == :drill
+		# 	println("State: ", convert_pos_idx_2_pos_coord(bmdp.pomdp, belief_state.pos))
+		# 	println("Cost Expended: ", belief_state.cost_expended)
+		# 	println("Actions available: ", actions(bmdp.pomdp, belief_state))
+		# 	println("Action: ", a)
+		# 	println("True reward: ", true_reward)
+		# 	println("Sim reward: ", sim_reward)
+		# 	println("True Value: ", bmdp.pomdp.true_map[new_belief_state.pos])
+		#
+		# 	if belief_state.location_belief.X == []
+	    #         μ_init, ν_init = query_no_data(belief_state.location_belief)
+	    #     else
+	    #         μ_init, ν_init, S_init = query(belief_state.location_belief)
+	    #     end
+		# 	if new_belief_state.location_belief.X == []
+		# 		μ_post, ν_post = query_no_data(new_belief_state.location_belief)
+		# 	else
+		# 		μ_post, ν_post, S_post = query(new_belief_state.location_belief)
+		# 	end
+		# 	println("Mean Value Before Drill: ", μ_init[s.pos])
+		# 	println("Mean Value After Drill: ", μ_post[s.pos])
+		#
+		# 	println("Drill Samples: ", new_belief_state.drill_samples)
+		# 	println("")
+		# end
 
 
         # new_state = generate_s(pomdp, state, a, rng)
@@ -173,7 +173,7 @@ function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map
 
 	# k = with_lengthscale(SqExponentialKernel(), 1.0) + with_lengthscale(MaternKernel(), 1.0)# NOTE: check length scale
 	k = with_lengthscale(SqExponentialKernel(), 1.0) # NOTE: check length scale
-    m(x) = 0.5 # default to 0.5 in the middle of the sample spectrum
+    m(x) = 0.0 # default to 0.5 in the middle of the sample spectrum
     X_query = [[i,j] for i = 1:10, j = 1:10]
     query_size = size(X_query)
     X_query = reshape(X_query, size(X_query)[1]*size(X_query)[2])
@@ -181,9 +181,9 @@ function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map
     GP = GaussianProcess(m, μ(X_query, m), k, [], X_query, [], [], [], [], KXqXq);
     f_prior = GP
 
-
 	gp_mcts_rewards = Vector{Float64}(undef, 0)
 
+	rmse_hist = []
 
     i = 1
     idx = 1
@@ -204,16 +204,26 @@ function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map
 		gp_mcts_reward = 0
 
 		gp_mcts_reward, state_hist, gp_hist, action_hist, reward_hist, total_reward_hist = run_rover_bmdp(rng, bmdp, gp_bmdp_policy, gp_bmdp_isterminal)
-		# plot_trial(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
-		# plot_trial_with_mean(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
+		plot_trial(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
+		plot_trial_with_mean(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
+		plot_true_map(pomdp.true_map,i)
+		plot_error_map(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
+		plot_RMSE_trajectory(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
+
 		@show gp_mcts_reward
 
+		rmse_hist = vcat(rmse_hist, [calculate_rmse_along_traj(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)])
 
         i = i+1
         idx = idx+1
 
         push!(gp_mcts_rewards, gp_mcts_reward)
     end
+
+	plot_RMSE_trajectory_history(rmse_hist)
+
+	writedlm( "/Users/joshuaott/icra2022/figures/rmse_hist.csv",  rmse_hist, ',')
+
 
 	@show mean(gp_mcts_rewards)
 

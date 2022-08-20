@@ -224,4 +224,4 @@ function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, ma
 end
 
 
-solver_test_RoverPOMDP("test", number_of_sample_types=10, total_budget = 30.0)
+solver_test_RoverPOMDP("test", number_of_sample_types=10, total_budget = 100.0)
