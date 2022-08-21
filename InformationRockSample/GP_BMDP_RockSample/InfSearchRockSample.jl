@@ -58,7 +58,7 @@ end
 
 # Define the ISRS POMDP
 @with_kw struct ISRSPOMDP <: POMDPs.POMDP{ISRSWorldState, MultimodalIPPAction, ISRSObservation}
-
+    rng::AbstractRNG
     f_prior::GaussianProcess
     map_size::Tuple{Int64, Int64}       = (5, 5)
     rocks_positions::Vector{ISRSPos}    = [(1,3), (3,5), (4,4)]
@@ -77,7 +77,7 @@ function are_grid_nbrs(idx1::Tuple{Int64,Int64}, idx2::Tuple{Int64,Int64})
     return (abs(idx1[1] - idx2[1]) + abs(idx1[2] - idx2[2])) == 1
 end
 
-function setup_isrs_pomdp(map_size::Tuple{Int64,Int64}, rocks_positions::Vector{ISRSPos}, rocks::Vector{ISRS_STATE},
+function setup_isrs_pomdp(rng::AbstractRNG, map_size::Tuple{Int64,Int64}, rocks_positions::Vector{ISRSPos}, rocks::Vector{ISRS_STATE},
                     beacon_positions::Vector{ISRSPos}, budget::Float64, f_prior::GaussianProcess)
 
     k = length(rocks_positions)
@@ -133,7 +133,8 @@ function setup_isrs_pomdp(map_size::Tuple{Int64,Int64}, rocks_positions::Vector{
     action_set = get_action_set(env)
     fws = Graphs.floyd_warshall_shortest_paths(env.location_graph)
 
-    return ISRSPOMDP(f_prior=f_prior,
+    return ISRSPOMDP(rng=rng,
+                     f_prior=f_prior,
                      map_size=map_size,
                      rocks_positions=rocks_positions,
                      rocks=rocks,
@@ -195,9 +196,41 @@ function POMDPs.actions(pomdp::ISRSPOMDP, b::ISRSBeliefState)
     return possible_actions
 end
 
+
+
+# function Base.rand(rng::AbstractRNG, a::Vector{MultimodalIPPAction})
+#     return a
+# end
+
+function POMDPs.action(p::RandomPolicy, b::ISRSBeliefState)
+    possible_actions = POMDPs.actions(p.problem, b)
+    if possible_actions == MultimodalIPPAction[]
+        return MultimodalIPPAction(b.current, nothing, b.current)
+    else
+        return rand(p.problem.pomdp.rng, possible_actions)
+    end
+end
+
 function POMDPs.initialstate(pomdp::ISRSPOMDP)
     curr = LinearIndices(pomdp.map_size)[pomdp.init_pos[1], pomdp.init_pos[2]]
-    return ISRSWorldState(curr, Set{Int}([curr]), pomdp.env.location_states, pomdp.f_prior, 0.0)
+    return ISRSWorldState(curr, Set{Int}([curr]), pomdp.env.location_states, 0.0)
+end
+
+function Base.rand(rng::AbstractRNG, pomdp::ISRSPOMDP, b::ISRSBeliefState)
+
+    location_states = rand(rng, b.gp, b.gp.mXq, b.gp.KXqXq)
+    corrected_location_states = Vector{ISRS_STATE}(undef, length(pomdp.env.location_states))
+    for i in 1:length(location_states)
+        if location_states[i] > 0.6
+            corrected_location_states[i] = RSGOOD
+        elseif location_states[i] < 0.4
+            corrected_location_states[i] = RSBAD
+        else
+            corrected_location_states[i] = RSNEITHER
+        end
+    end
+
+    return ISRSWorldState(b.current, b.visited, corrected_location_states, b.cost_expended)
 end
 
 function POMDPs.isterminal(pomdp::ISRSPOMDP, s::ISRSWorldState)
@@ -205,12 +238,32 @@ function POMDPs.isterminal(pomdp::ISRSPOMDP, s::ISRSWorldState)
     init_idx = LinearIndices(pomdp.map_size)[pomdp.init_pos[1], pomdp.init_pos[2]]
 
     # to exit we have to go back to the starting location
-    if s.cost_expended + pomdp.shortest_paths[s.current, init_idx] > pomdp.cost_budget
+    if s.cost_expended + pomdp.shortest_paths[s.current, init_idx] >= pomdp.cost_budget
         return true
     elseif s.current == init_idx && length(s.visited) > 1
         neighbors = Graphs.neighbors(pomdp.env.location_graph, init_idx)
         min_cost_from_start = minimum([pomdp.shortest_paths[init_idx, n] for n in neighbors])
-        if (pomdp.cost_budget - s.cost_expended) < 2*min_cost_from_start
+        if (pomdp.cost_budget - s.cost_expended) <= 2*min_cost_from_start
+            return true
+        else
+            return false
+        end
+    else
+        return false
+    end
+end
+
+function POMDPs.isterminal(pomdp::ISRSPOMDP, b::WorldBeliefState)
+
+    init_idx = LinearIndices(pomdp.map_size)[pomdp.init_pos[1], pomdp.init_pos[2]]
+
+    # to exit we have to go back to the starting location
+    if b.cost_expended + pomdp.shortest_paths[b.current, init_idx] >= pomdp.cost_budget
+        return true
+    elseif b.current == init_idx && length(b.visited) > 1
+        neighbors = Graphs.neighbors(pomdp.env.location_graph, init_idx)
+        min_cost_from_start = minimum([pomdp.shortest_paths[init_idx, n] for n in neighbors])
+        if (pomdp.cost_budget - b.cost_expended) <= 2*min_cost_from_start
             return true
         else
             return false
@@ -225,9 +278,8 @@ end
 ## For generate_o, use the ISRS formula
 ## Copy over belief update for sensing and visit - use ISRS formula
 
-# function POMDPs.generate_s(pomdp::ISRSPOMDP, s::ISRSWorldState, a::MultimodalIPPAction, rng::RNG) where {RNG <: AbstractRNG}
-function POMDPs.transition(pomdp::ISRSPOMDP, s::ISRSWorldState, a::MultimodalIPPAction, rng::RNG) where {RNG <: AbstractRNG}
-    O = obstype(pomdp)
+function generate_s(pomdp::ISRSPOMDP, s::ISRSWorldState, a::MultimodalIPPAction, rng::RNG) where {RNG <: AbstractRNG}
+# function POMDPs.transition(pomdp::ISRSPOMDP, s::ISRSWorldState, a::MultimodalIPPAction, rng::RNG) where {RNG <: AbstractRNG}
 
     if a.visit_location != nothing
 
@@ -245,63 +297,38 @@ function POMDPs.transition(pomdp::ISRSPOMDP, s::ISRSWorldState, a::MultimodalIPP
         # if a.visit_location in s.visited && s.location_states[a.visit_location] == RSGOOD
         if s.location_states[a.visit_location] == RSGOOD || s.location_states[a.visit_location] == RSBAD
             new_location_states[a.visit_location] = RSBAD
-            y = 0.0 #we know it becomes bad if it was good and we know it is bad if it was bad
-            σ²_n = (1e-9)^2 # prevent singularity
-            f_posterior = posterior(s.gp, [[CartesianIndices(pomdp.map_size)[a.visit_location].I[1], CartesianIndices(pomdp.map_size)[a.visit_location].I[2]]], [y], [σ²_n])
-            sp = ISRSWorldState(a.visit_location, new_visited, new_location_states, f_posterior, new_cost_expended)
+            sp = ISRSWorldState(a.visit_location, new_visited, new_location_states, new_cost_expended)
         else
-            sp = ISRSWorldState(a.visit_location, new_visited, new_location_states, s.gp, new_cost_expended)
+            sp = ISRSWorldState(a.visit_location, new_visited, new_location_states, new_cost_expended)
         end
 
     else
         new_cost_expended = s.cost_expended + get_energy_cost(a.sensing_action)
-
-        f_posterior = s.gp#deepcopy(s.gp)
-
-        for (i, loc) in enumerate(pomdp.env.location_states)
-
-
-            # Only bother if true location is a rock
-            if loc == RSGOOD || loc == RSBAD
-
-                dist = norm(pomdp.env.location_metadata[s.current] - pomdp.env.location_metadata[i])
-                prob_correct = 0.5*(1 + 2^(-4*dist/a.sensing_action.efficiency)) # TODO: Check
-
-                wrong_loc = (loc == RSGOOD) ? RSBAD : RSGOOD
-
-                if rand(rng) < prob_correct
-                    y = (loc == RSGOOD) ? 1.0 : 0.0
-                else
-                    y = (wrong_loc == RSGOOD) ? 1.0 : 0.0
-                end
-
-                # correct = ones(Int(floor(1000*(prob_correct))))
-                # incorrect = zeros(Int(floor(1000*(1-prob_correct))))
-                # σ_n = sum((vcat(correct,incorrect) .-  mean(vcat(correct,incorrect))).^2)/length(vcat(correct,incorrect))
-                
-                # NOTE: σ_n is the stddev whereas σ²_n is the varaiance. Julia uses σ_n
-                # for normal dist whereas our GP setup uses σ²_n
-                σ²_n = 1-prob_correct
-                f_posterior = posterior(f_posterior, [[CartesianIndices(pomdp.map_size)[i].I[1], CartesianIndices(pomdp.map_size)[i].I[2]]], [y], [σ²_n])
-
-
-            end
-        end
-
-        sp = ISRSWorldState(s.current, s.visited, s.location_states, f_posterior, new_cost_expended)
-        # o = O(sp.current, sp.visited, new_obs_location_states, sp.cost_expended)
-
+        sp = ISRSWorldState(s.current, s.visited, s.location_states, new_cost_expended)
     end
 
     return sp
 end
 
-function POMDPs.gen(pomdp::ISRSPOMDP, s::ISRSWorldState, a::MultimodalIPPAction, rng::RNG) where {RNG <: AbstractRNG}
-    sp = generate_s(pomdp, s, a, rng)
-    o = generate_o(pomdp, s, a, sp, rng)
-    r = reward(pomdp, s, a, sp)
+function POMDPs.transition(pomdp::ISRSPOMDP, s::ISRSWorldState, a::Vector{MultimodalIPPAction})
+    # return a terminal state if we receive MultimodalIPPAction[] as empty
+    return ISRSWorldState(s.current, s.visited, s.location_states, pomdp.cost_budget*10)
+end
 
-    return (sp=sp, o=o, r=r)
+
+function POMDPs.gen(pomdp::ISRSPOMDP, s::ISRSWorldState, a::MultimodalIPPAction, rng::RNG) where {RNG <: AbstractRNG}
+    if a == MultimodalIPPAction[]
+        sp = s
+        o = generate_o(pomdp, s, a, sp, rng)
+        r = 0.0
+        return
+    else
+        sp = generate_s(pomdp, s, a, rng)
+        o = generate_o(pomdp, s, a, sp, rng)
+        r = reward(pomdp, s, a, sp)
+
+        return (sp=sp, o=o, r=r)
+    end
 end
 
 get_state_of_belstate(::Type{ISRSLocationBeliefState}) = ISRS_STATE
@@ -350,31 +377,37 @@ end
 
 
 # Belief about beacon is correct and does not update
+# function initial_belief_state(pomdp::ISRSPOMDP)
+#
+#     initial_loc_belstates = ISRSLocationBeliefState[]
+#
+#     beacon_dist = @SVector [0., 0., 1.0, 0.0]
+#     neither_dist = @SVector [0., 0., 0., 1.0]
+#     rock_dist = @SVector [0.5, 0.5, 0.0, 0.0]
+#     state_types = @SVector [RSGOOD, RSBAD, RSBEACON, RSNEITHER]
+#
+#     for ls in pomdp.env.location_states
+#
+#         if ls == RSBEACON
+#             belief_state = ISRSLocationBeliefState(state_types, beacon_dist)
+#         elseif ls == RSNEITHER
+#             belief_state = ISRSLocationBeliefState(state_types, neither_dist)
+#         else
+#             belief_state = ISRSLocationBeliefState(state_types, rock_dist)
+#         end
+#
+#         push!(initial_loc_belstates, belief_state)
+#     end
+#
+#     curr = LinearIndices(pomdp.map_size)[pomdp.init_pos[1], pomdp.init_pos[2]]
+#
+#     return ISRSBeliefState(curr, Set{Int}(curr), initial_loc_belstates, 0.0)
+# end
 function initial_belief_state(pomdp::ISRSPOMDP)
-
-    initial_loc_belstates = ISRSLocationBeliefState[]
-
-    beacon_dist = @SVector [0., 0., 1.0, 0.0]
-    neither_dist = @SVector [0., 0., 0., 1.0]
-    rock_dist = @SVector [0.5, 0.5, 0.0, 0.0]
-    state_types = @SVector [RSGOOD, RSBAD, RSBEACON, RSNEITHER]
-
-    for ls in pomdp.env.location_states
-
-        if ls == RSBEACON
-            belief_state = ISRSLocationBeliefState(state_types, beacon_dist)
-        elseif ls == RSNEITHER
-            belief_state = ISRSLocationBeliefState(state_types, neither_dist)
-        else
-            belief_state = ISRSLocationBeliefState(state_types, rock_dist)
-        end
-
-        push!(initial_loc_belstates, belief_state)
-    end
 
     curr = LinearIndices(pomdp.map_size)[pomdp.init_pos[1], pomdp.init_pos[2]]
 
-    return ISRSBeliefState(curr, Set{Int}(curr), initial_loc_belstates, 0.0)
+    return ISRSBeliefState(curr, Set{Int}(curr), pomdp.f_prior, 0.0)
 end
 
 

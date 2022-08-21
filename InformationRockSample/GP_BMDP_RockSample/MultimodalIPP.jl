@@ -93,7 +93,6 @@ struct WorldState{LS}
     current::Int
     visited::Set{Int}
     location_states::Vector{LS}
-    gp::GaussianProcess
     cost_expended::Float64
 end
 
@@ -101,7 +100,7 @@ end
 struct WorldBeliefState{LBS}
     current::Int
     visited::Set{Int}
-    location_belief_states::Vector{LBS}
+    gp::GaussianProcess
     cost_expended::Float64
 end
 

@@ -80,10 +80,13 @@ function run_rover_bmdp(rng::RNG, bmdp::BeliefMDP, policy, isterminal::Function)
 	action_hist = []
 	reward_hist = []
 	total_reward_hist = []
+	total_planning_time = 0
 
     total_reward = 0.0
     while true
-        a = policy(belief_state)
+        a, t = @timed policy(belief_state)
+
+		total_planning_time += t
 
         if isterminal(belief_state)
             break
@@ -155,18 +158,55 @@ function run_rover_bmdp(rng::RNG, bmdp::BeliefMDP, policy, isterminal::Function)
 		reward_hist = vcat(reward_hist, deepcopy(true_reward))
 		total_reward_hist = vcat(total_reward_hist, deepcopy(total_reward))
 
+
     end
 
-    return total_reward, state_hist, gp_hist, action_hist, reward_hist, total_reward_hist
+    return total_reward, state_hist, gp_hist, action_hist, reward_hist, total_reward_hist, total_planning_time, length(reward_hist)
 
 end
 
 
 function get_gp_bmdp_policy(bmdp, rng, max_depth=20, queries = 100)
+
 	planner = solve(MCTS.DPWSolver(depth=max_depth, n_iterations=queries, rng=rng, k_state=0.5, k_action=10000.0, alpha_state=0.5), bmdp)
 	# planner = solve(MCTSSolver(depth=max_depth, n_iterations=queries, rng=rng), bmdp)
 
 	return b -> action(planner, b)
+end
+
+function raster_policy(pomdp, b)
+	pos = convert_pos_idx_2_pos_coord(pomdp, b.pos)
+
+	if b.cost_expended % 30 == 0
+		if pos == RoverPos(1,1)
+			return :right
+		else
+			return :drill
+		end
+	end
+
+	# in an odd column
+	if pos[1] % 2 == 0
+		# at the top of the column
+		if pos[2] == pomdp.map_size[2]
+			return :right
+		else
+			return :up
+		end
+	# in an even column
+	else
+		# at the bottom of the column
+		if pos[2] == 1
+			# at the origin
+			if pos[1] == 1
+				return :right
+			else
+				return :right
+			end
+		else
+			return :down
+		end
+	end
 end
 
 function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map_size::Tuple{Int, Int}=(10,10), seed::Int64=1234, num_graph_trials=40, total_budget = 100.0)
@@ -184,6 +224,8 @@ function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map
 	gp_mcts_rewards = Vector{Float64}(undef, 0)
 
 	rmse_hist = []
+	total_planning_time = 0
+	total_plans = 0
 
     i = 1
     idx = 1
@@ -203,12 +245,18 @@ function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map
 
 		gp_mcts_reward = 0
 
-		gp_mcts_reward, state_hist, gp_hist, action_hist, reward_hist, total_reward_hist = run_rover_bmdp(rng, bmdp, gp_bmdp_policy, gp_bmdp_isterminal)
-		plot_trial(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
-		plot_trial_with_mean(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
-		plot_true_map(pomdp.true_map,i)
-		plot_error_map(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
-		plot_RMSE_trajectory(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
+		gp_mcts_reward, state_hist, gp_hist, action_hist, reward_hist, total_reward_hist, planning_time, num_plans = run_rover_bmdp(rng, bmdp, gp_bmdp_policy, gp_bmdp_isterminal)
+		total_planning_time += planning_time
+		total_plans += num_plans
+		# # NOTE THIS IS RASTER POLICY
+		# rast_p = b -> raster_policy(pomdp, b)
+		# gp_mcts_reward, state_hist, gp_hist, action_hist, reward_hist, total_reward_hist = run_rover_bmdp(rng, bmdp, rast_p, gp_bmdp_isterminal)
+
+		# plot_trial(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
+		# plot_trial_with_mean(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
+		# plot_true_map(pomdp.true_map,i)
+		# plot_error_map(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
+		# plot_RMSE_trajectory(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
 
 		@show gp_mcts_reward
 
@@ -220,11 +268,11 @@ function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map
         push!(gp_mcts_rewards, gp_mcts_reward)
     end
 
-	plot_RMSE_trajectory_history(rmse_hist)
+	# plot_RMSE_trajectory_history(rmse_hist)
+	#
+	# writedlm( "/Users/joshuaott/icra2022/figures/rmse_hist.csv",  rmse_hist, ',')
 
-	writedlm( "/Users/joshuaott/icra2022/figures/rmse_hist.csv",  rmse_hist, ',')
-
-
+	println("average planning time: ", total_planning_time/total_plans)
 	@show mean(gp_mcts_rewards)
 
 end

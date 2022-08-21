@@ -9,10 +9,21 @@ using Statistics
 using Distributions
 using KernelFunctions
 using Plots
+using MCTS
 include("CustomGP.jl")
 include("MultimodalIPP.jl")
-include("MCTS.jl")
+include("belief_mdp.jl")
 
+POMDPs.isterminal(bmdp::BeliefMDP, b::WorldBeliefState) = isterminal(bmdp.pomdp, b)
+
+function POMDPs.actions(bmdp::BeliefMDP, b::ISRSBeliefState)
+    possible_actions = actions_possible_from_current(bmdp.pomdp, b.current, b.cost_expended)
+    if possible_actions == MultimodalIPPAction[]
+        return [MultimodalIPPAction(b.current, nothing, b.current)]
+    else
+        return possible_actions
+    end
+end
 
 function plot_trial(state_hist, location_states_hist, gp_hist, action_hist, reward_hist, trial_num)
 
@@ -238,6 +249,122 @@ function plot_trial_with_mean(state_hist, location_states_hist, gp_hist, action_
 
 end
 
+function initialstate(pomdp::ISRSPOMDP)
+    curr = LinearIndices(pomdp.map_size)[pomdp.init_pos[1], pomdp.init_pos[2]]
+    return ISRSWorldState(curr, Set{Int}([curr]), pomdp.env.location_states, 0.0)
+end
+
+function initialstate(bmdp::BeliefMDP)
+    curr = LinearIndices(bmdp.pomdp.map_size)[bmdp.pomdp.init_pos[1], bmdp.pomdp.init_pos[2]]
+    return ISRSBeliefState(curr, Set{Int}(curr), bmdp.pomdp.f_prior, 0.0)
+end
+
+function run_rock_sample_bmdp(rng::RNG, bmdp::BeliefMDP, policy, isterminal::Function) where {RNG<:AbstractRNG}
+
+    belief_state = initialstate(bmdp)
+	true_s = WorldState(belief_state.current, belief_state.visited, bmdp.pomdp.env.location_states, belief_state.cost_expended)
+
+    # belief_state = initial_belief_state(bmdp, rng)
+	state_hist = [deepcopy(belief_state.current)]
+	gp_hist = [deepcopy(belief_state.gp)]
+	location_states_hist = [deepcopy(true_s.location_states)]
+	action_hist = []
+	reward_hist = []
+	total_reward_hist = []
+	total_planning_time = 0
+
+    total_reward = 0.0
+    while true
+        a, t = @timed policy(belief_state)
+
+		total_planning_time += t
+
+        if isterminal(belief_state)
+            break
+        end
+
+		new_belief_state, sim_reward = POMDPs.gen(bmdp, belief_state, a, rng)
+
+		# just use these to get the true reward NOT the simulated reward
+		true_sp = generate_s(bmdp.pomdp, true_s, a, rng)
+		true_reward = reward(bmdp.pomdp, true_s, a, true_sp)
+
+		# if a == :drill
+		# 	println("State: ", convert_pos_idx_2_pos_coord(bmdp.pomdp, belief_state.pos))
+		# 	println("Cost Expended: ", belief_state.cost_expended)
+		# 	println("Actions available: ", actions(bmdp.pomdp, belief_state))
+		# 	println("Action: ", a)
+		# 	println("True reward: ", true_reward)
+		# 	println("Sim reward: ", sim_reward)
+		# 	println("True Value: ", bmdp.pomdp.true_map[new_belief_state.pos])
+		#
+		# 	if belief_state.location_belief.X == []
+	    #         μ_init, ν_init = query_no_data(belief_state.location_belief)
+	    #     else
+	    #         μ_init, ν_init, S_init = query(belief_state.location_belief)
+	    #     end
+		# 	if new_belief_state.location_belief.X == []
+		# 		μ_post, ν_post = query_no_data(new_belief_state.location_belief)
+		# 	else
+		# 		μ_post, ν_post, S_post = query(new_belief_state.location_belief)
+		# 	end
+		# 	println("Mean Value Before Drill: ", μ_init[s.pos])
+		# 	println("Mean Value After Drill: ", μ_post[s.pos])
+		#
+		# 	println("Drill Samples: ", new_belief_state.drill_samples)
+		# 	println("")
+		# end
+
+
+        # new_state = generate_s(pomdp, state, a, rng)
+        # loc_reward = reward(pomdp, state, a, new_state)
+        # obs = generate_o(pomdp, state, a, new_state, rng)
+		#
+		# # println("Reward: ", loc_reward)
+		# # println("Observation: ", obs)
+		# # println("True Value: ", pomdp.true_map[new_state.pos])
+		# # println("Drill Samples: ", new_state.drill_samples)
+		# #
+		# # # println("Particles: ", belief_state.location_belief.particles[:, new_state.pos])
+		# # # println("Weights: ", belief_state.location_belief.weights[:, new_state.pos])
+		# # println("")
+		#
+        # belief_state = update_belief(pomdp, belief_state, a, obs, rng)
+
+		# println("New Particles: ", belief_state.location_belief.particles[:, new_state.pos])
+		# println("New Weights: ", belief_state.location_belief.weights[:, new_state.pos])
+		# println("")
+
+        total_reward += true_reward
+        belief_state = new_belief_state
+		true_s = true_sp
+
+        if isterminal(belief_state)
+            break
+        end
+		state_hist = vcat(state_hist, deepcopy(belief_state.current))
+		gp_hist = vcat(gp_hist, deepcopy(belief_state.gp))
+		location_states_hist = vcat(location_states_hist, deepcopy(true_s.location_states))
+		action_hist = vcat(action_hist, deepcopy(a))
+		reward_hist = vcat(reward_hist, deepcopy(true_reward))
+		total_reward_hist = vcat(total_reward_hist, deepcopy(total_reward))
+
+
+    end
+
+    return total_reward, state_hist, location_states_hist, gp_hist, action_hist, reward_hist, total_reward_hist, total_planning_time, length(reward_hist)
+
+end
+
+
+
+function get_gp_bmdp_policy(bmdp, rng, max_depth=20, queries = 100)
+	planner = solve(MCTS.DPWSolver(depth=max_depth, n_iterations=queries, rng=rng, k_state=0.5, k_action=10000.0, alpha_state=0.5), bmdp)
+	# planner = solve(MCTSSolver(depth=max_depth, n_iterations=queries, rng=rng), bmdp)
+
+	return b -> action(planner, b)
+end
+
 
 
 function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=10, num_beacons::Int64=25,
@@ -263,6 +390,9 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
 
     i = 1
     idx = 1
+	total_planning_time = 0
+	total_plans = 0
+
     while idx <= num_graph_trials
         @show i
         # @show idx
@@ -312,20 +442,27 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
         end
 
 
-        pomdp = setup_isrs_pomdp(isrs_map_size, rocks_positions, rocks, beacon_positions, total_budget, f_prior)
+        pomdp = setup_isrs_pomdp(rng, isrs_map_size, rocks_positions, rocks, beacon_positions, total_budget, f_prior)
+		bmdp = BeliefMDP(pomdp, MultimodalIPPBeliefUpdater(pomdp), belief_reward)
+
+        gp_bmdp_isterminal(s) = POMDPs.isterminal(pomdp, s)
         isrs_env = pomdp.env
 
-        pomcp_isterminal(s) = POMDPs.isterminal(pomdp, s)
+        # pomcp_isterminal(s) = POMDPs.isterminal(pomdp, s)
 
-        n_iter = 100
-        depth = 10
-        c = 1.0
-        U(s)=RandomRollout(rng, pomdp, s, depth)
-        π_target=MonteCarloTreeSearch(rng, pomdp, Dict(), Dict(), n_iter, depth, c, U)
-        policy = π_target
+        # c = 1.0
+        # U(s)=RandomRollout(rng, pomdp, s, depth)
+        # π_target=MonteCarloTreeSearch(rng, pomdp, Dict(), Dict(), n_iter, depth, c, U)
+        # policy = π_target
+		depth = 5
+		gp_bmdp_policy = get_gp_bmdp_policy(bmdp, rng, depth, 100)
+
 
         gp_mcts_reward = 0.0
-		gp_mcts_reward, state_hist, location_states_hist, gp_hist, action_hist, reward_hist = graph_trial(rng, pomdp, policy, pomcp_isterminal)
+		gp_mcts_reward, state_hist, location_states_hist, gp_hist, action_hist, reward_hist, total_reward_hist, planning_time, num_plans = run_rock_sample_bmdp(rng, bmdp, gp_bmdp_policy, gp_bmdp_isterminal)
+		total_planning_time += planning_time
+		total_plans += num_plans
+		# gp_mcts_reward, state_hist, location_states_hist, gp_hist, action_hist, reward_hist = graph_trial(rng, pomdp, gp_bmdp_policy, gp_bmdp_isterminal)
         # plot_trial(state_hist, location_states_hist, gp_hist, action_hist, reward_hist, i)
 		# plot_trial_with_mean(state_hist, location_states_hist, gp_hist, action_hist, reward_hist, i)
 

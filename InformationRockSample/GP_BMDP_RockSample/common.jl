@@ -15,21 +15,21 @@ end
 function average_mode_density(curr_bel_state::BS) where {E <: Environment, BS <: WorldBeliefState}
     sum_entropy = 0.0
 
-    for loc_belief_state in curr_bel_state.location_belief_states
+    for loc_belief_state in curr_bel_state.gp
         sum_entropy += get_belief_state_mode_density(loc_belief_state)
     end
 
-    return sum_entropy/length(curr_bel_state.location_belief_states)
+    return sum_entropy/length(curr_bel_state.gp)
 end
 
 
 function exp_info_gain(env::E, curr_bel_state::BS, s::SN) where {E <: Environment, BS <: WorldBeliefState, SN <: Sensor}
 
     # First sample an observed state for each location
-    obs_location_states = [rand(lbs) for lbs in curr_bel_state.location_belief_states]
+    obs_location_states = [rand(lbs) for lbs in curr_bel_state.gp]
 
     # Now obtain a new belief state
-    new_bel_state_set = belief_update_location_states_sensor(env, curr_bel_state.location_belief_states,
+    new_bel_state_set = belief_update_location_states_sensor(env, curr_bel_state.gp,
                                                              obs_location_states, curr_bel_state.current, s)
     new_bel_state = BS(curr_bel_state.current, curr_bel_state.visited, new_bel_state_set, curr_bel_state.cost_expended)
 
@@ -60,20 +60,20 @@ function POMDPs.reward(pomdp::P, s::S, a::MultimodalIPPAction) where {P <: POMDP
     end
 end
 
-function POMDPs.reward(pomdp::P, s::S, a::MultimodalIPPAction, sp::S) where {P <: POMDPs.POMDP, S <: WorldState}
+function belief_reward(pomdp::P, b::B, a::MultimodalIPPAction, bp::B) where {P <: POMDPs.POMDP, B <: WorldBeliefState}
     # NOTE: we don't use the TRUE location state any where here (except to check if its actual rock)
     # we only use the GP belief to assign expected rewards since this is called during tree search
     # graph trial reward is called after we have selected an action during a graph trial and we now want to know
     # what the actual reward for that action is
     r = 0.0
-    next_visit = sp.current
+    next_visit = bp.current
 
     if a.visit_location != nothing
         # only check for actual rocks
-        if s.location_states[next_visit] == RSBAD || s.location_states[next_visit] == RSGOOD
+        if pomdp.env.location_states[next_visit] == RSBAD || pomdp.env.location_states[next_visit] == RSGOOD
 
             # this is equivalent to ΣR(s,a)b(s) by looking at the mean
-            expected_rock_value = s.gp.X == [] ? query_no_data(s.gp)[1][next_visit] : query(s.gp)[1][next_visit]
+            expected_rock_value = b.gp.X == [] ? query_no_data(b.gp)[1][next_visit] : query(b.gp)[1][next_visit]
 
             # scale expected reward based on expected rock value
             r += expected_rock_value*(pomdp.env.good_rock_reward - pomdp.env.bad_rock_penalty) + pomdp.env.bad_rock_penalty
@@ -86,20 +86,20 @@ function POMDPs.reward(pomdp::P, s::S, a::MultimodalIPPAction, sp::S) where {P <
         end
 
     else # sensing action. we don't want to reward for decreasing uncertainty just by visiting bad rocks!
-        if s.gp.X == sp.gp.X
+        if b.gp.X == bp.gp.X
             r += 0
             #return marginal_utility(pomdp.env, sp.current, s.visited, s.location_states)
         else
-            if s.gp.X == []
-                ν_init = query_no_data(s.gp)[2]
+            if b.gp.X == []
+                ν_init = query_no_data(b.gp)[2]
             else
-                ν_init = query(s.gp)[2]
+                ν_init = query(b.gp)[2]
             end
 
-            if sp.gp.X == []
-                ν_posterior = query_no_data(sp.gp)[2]
+            if bp.gp.X == []
+                ν_posterior = query_no_data(bp.gp)[2]
             else
-                ν_posterior = query(sp.gp)[2]
+                ν_posterior = query(bp.gp)[2]
             end
 
             r += 0.7*(sum(ν_init) - sum(ν_posterior))
@@ -108,16 +108,64 @@ function POMDPs.reward(pomdp::P, s::S, a::MultimodalIPPAction, sp::S) where {P <
     end
     return r
 end
+# function POMDPs.reward(pomdp::P, s::S, a::MultimodalIPPAction, sp::S) where {P <: POMDPs.POMDP, S <: WorldState}
+#     # NOTE: we don't use the TRUE location state any where here (except to check if its actual rock)
+#     # we only use the GP belief to assign expected rewards since this is called during tree search
+#     # graph trial reward is called after we have selected an action during a graph trial and we now want to know
+#     # what the actual reward for that action is
+#     r = 0.0
+#     next_visit = sp.current
+#
+#     if a.visit_location != nothing
+#         # only check for actual rocks
+#         if s.location_states[next_visit] == RSBAD || s.location_states[next_visit] == RSGOOD
+#
+#             # this is equivalent to ΣR(s,a)b(s) by looking at the mean
+#             expected_rock_value = s.gp.X == [] ? query_no_data(s.gp)[1][next_visit] : query(s.gp)[1][next_visit]
+#
+#             # scale expected reward based on expected rock value
+#             r += expected_rock_value*(pomdp.env.good_rock_reward - pomdp.env.bad_rock_penalty) + pomdp.env.bad_rock_penalty
+#
+#             # if expected_rock_value < 0.5 # RSBAD
+#             #     r += pomdp.env.bad_rock_penalty
+#             # else
+#             #     r += pomdp.env.good_rock_reward
+#             # end
+#         end
+#
+#     else # sensing action. we don't want to reward for decreasing uncertainty just by visiting bad rocks!
+#         if s.gp.X == sp.gp.X
+#             r += 0
+#             #return marginal_utility(pomdp.env, sp.current, s.visited, s.location_states)
+#         else
+#             if s.gp.X == []
+#                 ν_init = query_no_data(s.gp)[2]
+#             else
+#                 ν_init = query(s.gp)[2]
+#             end
+#
+#             if sp.gp.X == []
+#                 ν_posterior = query_no_data(sp.gp)[2]
+#             else
+#                 ν_posterior = query(sp.gp)[2]
+#             end
+#
+#             r += 0.7*(sum(ν_init) - sum(ν_posterior))
+#             #return marginal_utility(pomdp.env, sp.current, s.visited, s.location_states) + 0.3*(sum(ν_init) - sum(ν_posterior))
+#         end
+#     end
+#     return r
+# end
 
 function graph_trial_reward(pomdp::P, s::S, a::MultimodalIPPAction, sp::S) where {P <: POMDPs.POMDP, S <: WorldState}
     return marginal_utility(pomdp.env, sp.current, s.visited, s.location_states)
 end
 
 function Base.rand(rng::AbstractRNG, b::BS) where BS <: WorldBeliefState
-    S = get_state_of_belstate(eltype(b.location_belief_states))
+    S = get_state_of_belstate(eltype(b.gp))
     location_states = S[]
 
-    for lbs in b.location_belief_states
+    for lbs in b.gp
         sample = rand(rng, lbs)
         push!(location_states, sample)
     end
@@ -126,19 +174,82 @@ function Base.rand(rng::AbstractRNG, b::BS) where BS <: WorldBeliefState
 end
 
 
-
 function update_belief(pomdp::P, b::BS, a::MultimodalIPPAction, o::O) where {P <: POMDPs.POMDP, BS <: WorldBeliefState, O <: WorldObservation}
-    if a.visit_location != nothing
-        new_location_belief_states = belief_update_location_states_visit(pomdp.env, b.location_belief_states, o.obs_current)
-        bp = BS(o.obs_current, o.obs_visited, new_location_belief_states, o.obs_cost_expended)
-    else
-        new_location_belief_states = belief_update_location_states_sensor(pomdp.env, b.location_belief_states, o.obs_location_states,
-                                                                          o.obs_current, a.sensing_action)
-        bp = BS(o.obs_current, o.obs_visited, new_location_belief_states, o.obs_cost_expended)
-    end
 
-    return bp
-end
+    if a.visit_location != nothing
+
+         new_visited = union(Set{Int}([a.visit_location]), b.visited)
+         visit_cost = pomdp.shortest_paths[b.current, a.visit_location]
+         new_cost_expended = b.cost_expended + visit_cost
+
+         # Once a good rock is visited, it goes bad
+         # sp = ISRSWorldState(a.visit_location, new_visited, new_location_states, new_cost_expended)
+         # o = O(a.visit_location, new_visited, new_location_states, new_cost_expended)
+
+         # If visited twice, turn good rock bad # NOTE: I think this was wrong based on whats in the paper
+         # if a.visit_location in s.visited && s.location_states[a.visit_location] == RSGOOD
+         if pomdp.env.location_states[a.visit_location] == RSGOOD || pomdp.env.location_states[a.visit_location] == RSBAD
+             # NOTE: σ_n is the stddev whereas σ²_n is the varaiance. Julia uses σ_n
+             # for normal dist whereas our GP setup uses σ²_n
+             y = 0.0 #we know it becomes bad if it was good and we know it is bad if it was bad
+             σ²_n = 1e-9 # don't square this causes singular exception in belief update
+             f_posterior = posterior(b.gp, [[CartesianIndices(pomdp.map_size)[a.visit_location].I[1], CartesianIndices(pomdp.map_size)[a.visit_location].I[2]]], [y], [σ²_n])
+             bp = ISRSBeliefState(a.visit_location, new_visited, f_posterior, new_cost_expended)
+         else
+             bp = ISRSBeliefState(a.visit_location, new_visited, b.gp, new_cost_expended)
+         end
+
+     else
+         new_cost_expended = b.cost_expended + get_energy_cost(a.sensing_action)
+
+         f_posterior = b.gp#deepcopy(s.gp)
+
+         for (i, loc) in enumerate(pomdp.env.location_states)
+
+
+             # Only bother if true location is a rock
+             if loc == RSGOOD || loc == RSBAD
+
+                 dist = norm(pomdp.env.location_metadata[b.current] - pomdp.env.location_metadata[i])
+                 prob_correct = 0.5*(1 + 2^(-4*dist/a.sensing_action.efficiency)) # TODO: Check
+
+                 wrong_loc = (loc == RSGOOD) ? RSBAD : RSGOOD
+
+                 if rand(pomdp.rng) < prob_correct
+                     y = (loc == RSGOOD) ? 1.0 : 0.0
+                 else
+                     y = (wrong_loc == RSGOOD) ? 1.0 : 0.0
+                 end
+
+                 # correct = ones(Int(floor(1000*(prob_correct))))
+                 # incorrect = zeros(Int(floor(1000*(1-prob_correct))))
+                 # σ_n = sum((vcat(correct,incorrect) .-  mean(vcat(correct,incorrect))).^2)/length(vcat(correct,incorrect))
+
+                 # NOTE: σ_n is the stddev whereas σ²_n is the varaiance. Julia uses σ_n
+                 # for normal dist whereas our GP setup uses σ²_n
+                 σ²_n = 1-prob_correct
+                 f_posterior = posterior(f_posterior, [[CartesianIndices(pomdp.map_size)[i].I[1], CartesianIndices(pomdp.map_size)[i].I[2]]], [y], [σ²_n])
+             end
+         end
+
+         bp = ISRSBeliefState(b.current, b.visited, f_posterior, new_cost_expended)
+     end
+
+     return bp
+ end
+
+# function update_belief(pomdp::P, b::BS, a::MultimodalIPPAction, o::O) where {P <: POMDPs.POMDP, BS <: WorldBeliefState, O <: WorldObservation}
+#     if a.visit_location != nothing
+#         new_location_belief_states = belief_update_location_states_visit(pomdp.env, b.location_belief_states, o.obs_current)
+#         bp = BS(o.obs_current, o.obs_visited, new_location_belief_states, o.obs_cost_expended)
+#     else
+#         new_location_belief_states = belief_update_location_states_sensor(pomdp.env, b.location_belief_states, o.obs_location_states,
+#                                                                           o.obs_current, a.sensing_action)
+#         bp = BS(o.obs_current, o.obs_visited, new_location_belief_states, o.obs_cost_expended)
+#     end
+#
+#     return bp
+# end
 
 struct MultimodalIPPBeliefUpdater{P<:POMDPs.POMDP} <: Updater
     pomdp::P
@@ -242,50 +353,50 @@ end
 
 
 # NOTE: Common to both
-function graph_trial(rng::RNG, pomdp::POMDPs.POMDP, policy, isterminal::Function) where {RNG<:AbstractRNG}
-
-    state = initialstate(pomdp)
-    state_hist = [deepcopy(state.current)]
-    location_states_hist = [deepcopy(state.location_states)]
-    gp_hist = [deepcopy(state.gp)]
-    action_hist = []
-    reward_hist = []
-    # belief_state = initial_belief_state(pomdp)
-
-    total_reward = 0.0
-    while true
-
-        a = policy(state)
-
-
-        if isterminal(state)
-            break
-        end
-
-        new_state = transition(pomdp, state, a, rng)
-        # NOTE: this is the TRUE reward it receives based on the TRUE state whereas POMDPs.reward is the belief dependent reward it receives during tree search and rollouts
-        loc_reward = graph_trial_reward(pomdp, state, a, new_state)
-        # obs = generate_o(pomdp, state, a, new_state, rng)
-        # belief_state = update_belief(pomdp, belief_state, a, obs)
-        total_reward += loc_reward
-        state = new_state
-
-        if isterminal(state)
-            break
-        end
-        # println(a)
-        state_hist = vcat(state_hist, deepcopy(state.current))
-        location_states_hist = vcat(location_states_hist, deepcopy(state.location_states))
-        gp_hist = vcat(gp_hist, deepcopy(state.gp))
-        # action_hist = vcat(action_hist, deepcopy(a))
-        reward_hist = vcat(reward_hist, deepcopy(total_reward))
-    end
-    # println(state_hist)
-    # println(location_states_hist)
-    # println(action_hist)
-    # return total_reward, state_hist, action_hist
-    return total_reward, state_hist, location_states_hist, gp_hist, action_hist, reward_hist
-end
+# function graph_trial(rng::RNG, pomdp::POMDPs.POMDP, policy, isterminal::Function) where {RNG<:AbstractRNG}
+#
+#     state = initialstate(pomdp)
+#     state_hist = [deepcopy(state.current)]
+#     location_states_hist = [deepcopy(state.location_states)]
+#     gp_hist = [deepcopy(state.gp)]
+#     action_hist = []
+#     reward_hist = []
+#     # belief_state = initial_belief_state(pomdp)
+#
+#     total_reward = 0.0
+#     while true
+#
+#         a = policy(state)
+#
+#
+#         if isterminal(state)
+#             break
+#         end
+#
+#         new_state = transition(pomdp, state, a, rng)
+#         # NOTE: this is the TRUE reward it receives based on the TRUE state whereas POMDPs.reward is the belief dependent reward it receives during tree search and rollouts
+#         loc_reward = graph_trial_reward(pomdp, state, a, new_state)
+#         # obs = generate_o(pomdp, state, a, new_state, rng)
+#         # belief_state = update_belief(pomdp, belief_state, a, obs)
+#         total_reward += loc_reward
+#         state = new_state
+#
+#         if isterminal(state)
+#             break
+#         end
+#         # println(a)
+#         state_hist = vcat(state_hist, deepcopy(state.current))
+#         location_states_hist = vcat(location_states_hist, deepcopy(state.location_states))
+#         gp_hist = vcat(gp_hist, deepcopy(state.gp))
+#         # action_hist = vcat(action_hist, deepcopy(a))
+#         reward_hist = vcat(reward_hist, deepcopy(total_reward))
+#     end
+#     # println(state_hist)
+#     # println(location_states_hist)
+#     # println(action_hist)
+#     # return total_reward, state_hist, action_hist
+#     return total_reward, state_hist, location_states_hist, gp_hist, action_hist, reward_hist
+# end
 
 function get_pomcp_gcb_policy(env, pomdp, budget, rng,  max_depth=20, queries = 100, lambda=0.00001)
     rollout_policy = MultimodalIPPGreedyPolicy(pomdp, lambda, rng)

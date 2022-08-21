@@ -22,13 +22,13 @@ end
 K(X, X′, k) = kernelmatrix(k, X, X′)
 # ν(X, K) = [variance(x, X, K) for x in X]
 
-function mvnrand(μ, Σ, inflation=1e-6)
+function mvnrand(rng, μ, Σ, inflation=1e-6)
     N = MvNormal(μ, Σ + inflation*I)
     #N = MvNormal(μ, Σ)
-    return rand(N)
+    return rand(rng, N)
 end
-Base.rand(GP, X) = mvnrand(μ(X, GP.m), Σ(X, GP.k))
-Base.rand(GP, μ_calc, Σ_calc) = mvnrand(μ_calc, Σ_calc)
+Base.rand(rng, GP, X) = mvnrand(rng, μ(X, GP.m), Σ(X, GP.k))
+Base.rand(rng, GP, μ_calc, Σ_calc) = mvnrand(rng, μ_calc, Σ_calc)
 
 function query_no_data(GP::GaussianProcess)
     μₚ = GP.mXq
@@ -41,7 +41,7 @@ function query(GP::GaussianProcess)
     # tmp = GP.KXqX / (GP.KXX + diagm(GP.ν))
     tmp = GP.KXqX / (GP.KXX + Diagonal(GP.ν))
     μₚ = GP.mXq + tmp*(GP.y - μ(GP.X, GP.m))
-    S = GP.KXqXq - tmp * GP.KXqX'
+    S = GP.KXqXq - tmp*GP.KXqX'
     νₚ = diag(S) .+ eps() # eps prevents numerical issues
     return (μₚ, νₚ, S)
 end
