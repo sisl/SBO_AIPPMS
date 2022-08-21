@@ -473,7 +473,8 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
 
         push!(gp_mcts_rewards, gp_mcts_reward)
     end
-
+	
+	println("average planning time: ", total_planning_time/total_plans)
     @show mean(gp_mcts_rewards)
 
 end
