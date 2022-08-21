@@ -10,6 +10,7 @@ using Distributions
 using Plots
 using KernelFunctions
 using MCTS
+using DelimitedFiles
 
 
 POMDPs.isterminal(bmdp::BeliefMDP, b::RoverBelief) = isterminal(bmdp.pomdp, b)
@@ -209,7 +210,7 @@ function raster_policy(pomdp, b)
 	end
 end
 
-function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map_size::Tuple{Int, Int}=(10,10), seed::Int64=1234, num_graph_trials=40, total_budget = 100.0)
+function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map_size::Tuple{Int, Int}=(10,10), seed::Int64=1234, num_graph_trials=40, total_budget = 100.0, use_ssh_dir=false, plot_results=true)
 
 	# k = with_lengthscale(SqExponentialKernel(), 1.0) + with_lengthscale(MaternKernel(), 1.0)# NOTE: check length scale
 	k = with_lengthscale(SqExponentialKernel(), 1.0) # NOTE: check length scale
@@ -222,10 +223,14 @@ function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map
     f_prior = GP
 
 	gp_mcts_rewards = Vector{Float64}(undef, 0)
+	rmse_hist_gp_mcts = []
+	total_planning_time_gp_mcts = 0
+	total_plans_gp_mcts = 0
 
-	rmse_hist = []
-	total_planning_time = 0
-	total_plans = 0
+	raster_rewards = Vector{Float64}(undef, 0)
+	rmse_hist_raster = []
+	total_planning_time_raster = 0
+	total_plans_raster = 0
 
     i = 1
     idx = 1
@@ -243,39 +248,65 @@ function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map
 		depth = 5
 		gp_bmdp_policy = get_gp_bmdp_policy(bmdp, rng, depth, 100)
 
-		gp_mcts_reward = 0
-
+		# GP-MCTS-DPW
 		gp_mcts_reward, state_hist, gp_hist, action_hist, reward_hist, total_reward_hist, planning_time, num_plans = run_rover_bmdp(rng, bmdp, gp_bmdp_policy, gp_bmdp_isterminal)
-		total_planning_time += planning_time
-		total_plans += num_plans
-		# # NOTE THIS IS RASTER POLICY
-		# rast_p = b -> raster_policy(pomdp, b)
-		# gp_mcts_reward, state_hist, gp_hist, action_hist, reward_hist, total_reward_hist = run_rover_bmdp(rng, bmdp, rast_p, gp_bmdp_isterminal)
-
-		# plot_trial(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
-		# plot_trial_with_mean(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
-		# plot_true_map(pomdp.true_map,i)
-		# plot_error_map(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
-		# plot_RMSE_trajectory(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)
-
+		total_planning_time_gp_mcts += planning_time
+		total_plans_gp_mcts += num_plans
+		rmse_hist_gp_mcts = vcat(rmse_hist_gp_mcts, [calculate_rmse_along_traj(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)])
+		if plot_results
+			# plot_trial(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i, "gp_mcts_dpw", use_ssh_dir)
+			# plot_trial_with_mean(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i, "gp_mcts_dpw", use_ssh_dir)
+			# plot_true_map(pomdp.true_map,i, "gp_mcts_dpw", use_ssh_dir)
+			# plot_error_map(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i, "gp_mcts_dpw", use_ssh_dir)
+			# plot_RMSE_trajectory(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i, "gp_mcts_dpw", use_ssh_dir)
+		end
 		@show gp_mcts_reward
 
-		rmse_hist = vcat(rmse_hist, [calculate_rmse_along_traj(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)])
+		# RASTER POLICY
+		rast_p = b -> raster_policy(pomdp, b)
+		raster_reward, state_hist, gp_hist, action_hist, reward_hist, total_reward_hist = run_rover_bmdp(rng, bmdp, rast_p, gp_bmdp_isterminal)
+		total_planning_time_raster += planning_time
+		total_plans_raster += num_plans
+		rmse_hist_raster = vcat(rmse_hist_raster, [calculate_rmse_along_traj(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)])
+		if plot_results
+			plot_trial(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i, "raster", use_ssh_dir)
+			plot_trial_with_mean(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i, "raster", use_ssh_dir)
+			plot_true_map(pomdp.true_map,i, "raster", use_ssh_dir)
+			plot_error_map(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i, "raster", use_ssh_dir)
+			plot_RMSE_trajectory(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i, "raster", use_ssh_dir)
+		end
+		@show raster_reward
+
 
         i = i+1
         idx = idx+1
 
         push!(gp_mcts_rewards, gp_mcts_reward)
+		push!(raster_rewards, raster_reward)
+
     end
 
-	# plot_RMSE_trajectory_history(rmse_hist)
-	#
-	# writedlm( "/Users/joshuaott/icra2022/figures/rmse_hist.csv",  rmse_hist, ',')
+	if plot_results
+		plot_RMSE_trajectory_history(rmse_hist_gp_mcts, "gp_mcts_dpw", use_ssh_dir)
+		plot_RMSE_trajectory_history(rmse_hist_raster, "raster", use_ssh_dir)
+	end
 
-	println("average planning time: ", total_planning_time/total_plans)
+	if use_ssh_dir
+		writedlm( "/home/jott2/figures/rmse_hist_gp_mcts.csv",  rmse_hist_gp_mcts, ',')
+		writedlm( "/home/jott2/figures/rmse_hist_raster.csv",  rmse_hist_raster, ',')
+	else
+		writedlm( "/Users/joshuaott/icra2022/figures/rmse_hist_gp_mcts.csv",  rmse_hist_gp_mcts, ',')
+		writedlm( "/Users/joshuaott/icra2022/figures/rmse_hist_raster.csv",  rmse_hist_raster, ',')
+	end
+
+	println("GP-MCTS-DPW average planning time: ", total_planning_time_gp_mcts/total_plans_gp_mcts)
+	println("Raster average planning time: ", total_planning_time_raster/total_plans_raster)
+
 	@show mean(gp_mcts_rewards)
+	@show mean(raster_rewards)
+
 
 end
 
 
-solver_test_RoverBMDP("test", number_of_sample_types=10, total_budget = 100.0)
+solver_test_RoverBMDP("test", number_of_sample_types=10, total_budget = 100.0, use_ssh_dir=false, plot_results=true)

@@ -1,3 +1,4 @@
+include("CustomGP.jl") # only used for RMSE comparison in POMDP_Rover dir
 include("rover_pomdp.jl")
 include("pomcp_policies.jl")
 include("plot_RoverPOMDP.jl")
@@ -7,6 +8,8 @@ using POMDPs
 using Statistics
 using Distributions
 using Plots
+using KernelFunctions
+using DelimitedFiles
 
 ################################################################################
 # Map Building
@@ -72,12 +75,16 @@ function run_rover_pomdp(rng::RNG, pomdp::POMDPs.POMDP, policy, isterminal::Func
 	state_hist = [deepcopy(state.pos)]
 	belief_hist = [deepcopy(belief_state.location_belief)]
 	action_hist = []
+	obs_hist = []
 	reward_hist = []
 	total_reward_hist = []
+	total_planning_time = 0
+
 
     total_reward = 0.0
     while true
-        a = policy(belief_state)
+		a, t = @timed policy(belief_state)
+		total_planning_time += t
 
         if isterminal(state)
             break
@@ -117,23 +124,32 @@ function run_rover_pomdp(rng::RNG, pomdp::POMDPs.POMDP, policy, isterminal::Func
 		state_hist = vcat(state_hist, deepcopy(state.pos))
 		belief_hist = vcat(belief_hist, deepcopy(belief_state.location_belief))
 		action_hist = vcat(action_hist, deepcopy(a))
+		obs_hist = vcat(obs_hist, deepcopy(obs))
 		reward_hist = vcat(reward_hist, deepcopy(loc_reward))
 		total_reward_hist = vcat(total_reward_hist, deepcopy(total_reward))
 
 
     end
 
-    return total_reward, state_hist, belief_hist, action_hist, reward_hist, total_reward_hist
+    return total_reward, state_hist, belief_hist, action_hist, obs_hist, reward_hist, total_reward_hist, total_planning_time, length(reward_hist)
 
 end
 
-function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, map_size::Tuple{Int, Int}=(10,10), seed::Int64=1234, num_graph_trials=40, total_budget = 100.0)
+function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, map_size::Tuple{Int, Int}=(10,10), seed::Int64=1234, num_graph_trials=40, total_budget = 100.0, use_ssh_dir=false, plot_results=true)
 
 
 
     pomcp_gcb_rewards = Vector{Float64}(undef, 0)
     pomcp_basic_rewards = Vector{Float64}(undef, 0)
 	gp_mcts_rewards = Vector{Float64}(undef, 0)
+
+	rmse_hist_gcb= []
+	total_planning_time_gcb = 0
+	total_plans_gcb = 0
+
+	rmse_hist_basic= []
+	total_planning_time_basic = 0
+	total_plans_basic = 0
 
 
     i = 1
@@ -157,49 +173,28 @@ function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, ma
         pomcp_gcb_reward = 0.0
         pomcp_basic_reward = 0.0
 
-
-		pomcp_gcb_reward, state_hist, belief_hist, action_hist, reward_hist, total_reward_hist = run_rover_pomdp(rng, pomdp, pomcp_gcb_policy, pomcp_isterminal)
-		@show pomcp_gcb_reward
-		# plot_trial(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "gcb")
-		# plot_trial_with_mean(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "gcb")
-
-		pomcp_basic_reward, state_hist, belief_hist, action_hist, reward_hist, total_reward_hist = run_rover_pomdp(rng, pomdp, pomcp_basic_policy, pomcp_isterminal)
-		@show pomcp_basic_reward
-		# plot_trial(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "basic")
-		# plot_trial_with_mean(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "basic")
-
-		try
-			# pomcp_gcb_reward, state_hist, belief_hist, action_hist, reward_hist, total_reward_hist = run_rover_pomdp(rng, pomdp, pomcp_gcb_policy, pomcp_isterminal)
-			# @show pomcp_gcb_reward
-			# plot_trial(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "gcb")
-			# plot_trial_with_mean(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "gcb")
-			#
-			# pomcp_basic_reward, state_hist, belief_hist, action_hist, reward_hist, total_reward_hist = run_rover_pomdp(rng, pomdp, pomcp_basic_policy, pomcp_isterminal)
-			# @show pomcp_basic_reward
-			#
-			# plot_trial(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i, "basic")
-			# plot_trial_with_mean(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i, "basic")
-
-			# pomcp_gcb_reward, state_hist, location_states_hist, action_hist, reward_hist = run_rover_pomdp(rng, pomdp, pomcp_gcb_policy, pomcp_isterminal)
-			# plot_trial(state_hist, location_states_hist, action_hist, reward_hist, i, "gcb")
-			# @show pomcp_gcb_reward
-
-
-			# pomcp_basic_reward, state_hist, location_states_hist, action_hist, reward_hist = run_rover_pomdp(rng, pomdp, pomcp_gcb_policy, pomcp_isterminal)
-			# pomcp_basic_reward = run_rover_pomdp(rng, pomdp, pomcp_basic_policy, pomcp_isterminal)
-
-			# plot_trial(state_hist, location_states_hist, action_hist, reward_hist, i, "basic")
-			# @show pomcp_basic_reward
-		catch y
-			println("CAUGHT")
-			if isa(y, InterruptException)
-                throw(InterruptException)
-            end
-            pomcp_gcb_reward = 0.0
-            pomcp_basic_reward = 0.0
-            i = i+1
-            continue
+		# GCB
+		pomcp_gcb_reward, state_hist, belief_hist, action_hist, obs_hist, reward_hist, total_reward_hist, planning_time, num_plans = run_rover_pomdp(rng, pomdp, pomcp_gcb_policy, pomcp_isterminal)
+		total_planning_time_gcb += planning_time
+		total_plans_gcb += num_plans
+		rmse_hist_gcb = vcat(rmse_hist_gcb, [calculate_rmse_along_traj(pomdp, true_map, state_hist, belief_hist, action_hist, obs_hist, total_reward_hist, reward_hist, i)])
+		if plot_results
+			plot_trial(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "gcb", use_ssh_dir)
+			plot_trial_with_mean(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "gcb", use_ssh_dir)
 		end
+		@show pomcp_gcb_reward
+
+		# Basic
+		pomcp_basic_reward, state_hist, belief_hist, action_hist, obs_hist, reward_hist, total_reward_hist, planning_time, num_plans = run_rover_pomdp(rng, pomdp, pomcp_basic_policy, pomcp_isterminal)
+		total_planning_time_basic += planning_time
+		total_plans_basic += num_plans
+		rmse_hist_basic = vcat(rmse_hist_basic, [calculate_rmse_along_traj(pomdp, true_map, state_hist, belief_hist, action_hist, obs_hist, total_reward_hist, reward_hist, i)])
+		if plot_results
+			plot_trial(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "basic", use_ssh_dir)
+			plot_trial_with_mean(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "basic", use_ssh_dir)
+		end
+		@show pomcp_basic_reward
+
 
         i = i+1
         idx = idx+1
@@ -208,20 +203,27 @@ function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, ma
         push!(pomcp_basic_rewards, pomcp_basic_reward)
     end
 
+	if plot_results
+		plot_RMSE_trajectory_history(rmse_hist_gcb, "gcb", use_ssh_dir)
+		plot_RMSE_trajectory_history(rmse_hist_basic, "basic", use_ssh_dir)
+	end
+
+	if use_ssh_dir
+		writedlm( "/home/jott2/figures/rmse_hist_gcb.csv",  rmse_hist_gcb, ',')
+		writedlm( "/home/jott2/figures/rmse_hist_basic.csv",  rmse_hist_basic, ',')
+	else
+		writedlm( "/Users/joshuaott/icra2022/figures/rmse_hist_gcb.csv",  rmse_hist_gcb, ',')
+		writedlm( "/Users/joshuaott/icra2022/figures/rmse_hist_basic.csv",  rmse_hist_basic, ',')
+	end
+
+	println("POMCP GCB average planning time: ", total_planning_time_gcb/total_plans_gcb)
+	println("POMCP Basic average planning time: ", total_planning_time_basic/total_plans_basic)
+
 	@show mean(pomcp_gcb_rewards)
     @show mean(pomcp_basic_rewards)
 
 
-    # outfile_pomcp_gcb = string("isrs-pomcp-gcb-",pref,".json")
-    # open(outfile_pomcp_gcb,"w") do f
-    #     JSON.print(f,Dict("rewards"=>pomcp_gcb_rewards),2)
-    # end
-	#
-    # outfile_pomcp_basic = string("isrs-pomcp-basic-",pref,".json")
-    # open(outfile_pomcp_basic,"w") do f
-    #     JSON.print(f,Dict("rewards"=>pomcp_basic_rewards),2)
-    # end
 end
 
 
-solver_test_RoverPOMDP("test", number_of_sample_types=10, total_budget = 100.0)
+solver_test_RoverPOMDP("test", number_of_sample_types=10, total_budget = 100.0, use_ssh_dir=false, plot_results=true)

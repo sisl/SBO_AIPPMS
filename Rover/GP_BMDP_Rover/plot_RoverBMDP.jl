@@ -2,7 +2,7 @@ using Colors
 
 theme(:dao)
 
-function plot_trial(true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, trial_num)
+function plot_trial(true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, trial_num, trial_name, use_ssh_dir)
 
 	# increase GP query resolution for plotting
 	# k = with_lengthscale(SqExponentialKernel(), 1.0) + with_lengthscale(MaternKernel(), 1.0)# NOTE: check length scale
@@ -70,9 +70,11 @@ function plot_trial(true_map, state_hist, gp_hist, action_hist, total_reward_his
 		scatter!([CartesianIndices((10,10))[state_hist[i]].I[1]],[CartesianIndices((10,10))[state_hist[i]].I[2]],legend=false, color=:orchid1, title=title, markersize=7)
 
 	end
-	Plots.gif(anim, "/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/variance/GP_BMDP_ROVER$(trial_num).gif", fps = 2)
-	# Plots.gif(anim, "/Users/joshuaott/icra2022/figures/GPISRS$(trial_num).gif", fps = 2)
-
+	if use_ssh_dir
+		Plots.gif(anim, "/home/jott2/figures/GP_BMDP_Rover/$(trial_name)/variance/GP_BMDP_ROVER$(trial_num).gif", fps = 2)
+	else
+		Plots.gif(anim, "/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/$(trial_name)/variance/GP_BMDP_ROVER$(trial_num).gif", fps = 2)
+	end
 
 	############################################################################
 	# Just make the plot
@@ -97,13 +99,15 @@ function plot_trial(true_map, state_hist, gp_hist, action_hist, total_reward_his
 		scatter!([CartesianIndices((10,10))[state_hist[bad_drill_idx[i]]].I[1] for i in collect(1:bad_scatter_idx)],[CartesianIndices((10,10))[state_hist[bad_drill_idx[i]]].I[2] for i in collect(1:bad_scatter_idx)],legend=false, color=:red, markeralpha=1, markersize=6)
 	end
 
-	savefig("/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/variance/GP_BMDP_ROVER$(trial_num).pdf")
-	# savefig("/Users/joshuaott/icra2022/figures/GPISRS$(trial_num).pdf")
-
+	if use_ssh_dir
+		savefig("/home/jott2/figures/GP_BMDP_Rover/$(trial_name)/variance/GP_BMDP_ROVER$(trial_num).pdf")
+	else
+		savefig("/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/$(trial_name)/variance/GP_BMDP_ROVER$(trial_num).pdf")
+	end
 
 end
 
-function plot_trial_with_mean(true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, trial_num)
+function plot_trial_with_mean(true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, trial_num, trial_name, use_ssh_dir)
 
 	# increase GP query resolution for plotting
 	# k = with_lengthscale(SqExponentialKernel(), 1.0) + with_lengthscale(MaternKernel(), 1.0)# NOTE: check length scale
@@ -172,9 +176,11 @@ function plot_trial_with_mean(true_map, state_hist, gp_hist, action_hist, total_
 		scatter!([CartesianIndices((10,10))[state_hist[i]].I[1]],[CartesianIndices((10,10))[state_hist[i]].I[2]],legend=false, color=:orchid1, title=title, markersize=7)
 
 	end
-	Plots.gif(anim, "/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/mean/GP_BMDP_ROVER$(trial_num).gif", fps = 2)
-	# Plots.gif(anim, "/Users/joshuaott/icra2022/figures/GPISRS$(trial_num).gif", fps = 2)
-
+	if use_ssh_dir
+		Plots.gif(anim, "/home/jott2/figures/GP_BMDP_Rover/$(trial_name)/mean/GP_BMDP_ROVER$(trial_num).gif", fps = 2)
+	else
+		Plots.gif(anim, "/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/$(trial_name)/mean/GP_BMDP_ROVER$(trial_num).gif", fps = 2)
+	end
 
 	############################################################################
 	# Just make the plot
@@ -201,19 +207,26 @@ function plot_trial_with_mean(true_map, state_hist, gp_hist, action_hist, total_
 		scatter!([CartesianIndices((10,10))[state_hist[bad_drill_idx[i]]].I[1] for i in collect(1:bad_scatter_idx)],[CartesianIndices((10,10))[state_hist[bad_drill_idx[i]]].I[2] for i in collect(1:bad_scatter_idx)],legend=false, color=:red, markeralpha=1, markersize=6)
 	end
 
-	savefig("/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/mean/GP_BMDP_ROVER$(trial_num).pdf")
-	# savefig("/Users/joshuaott/icra2022/figures/GPISRS$(trial_num).pdf")
-
+	if use_ssh_dir
+		savefig("/home/jott2/figures/GP_BMDP_Rover/$(trial_name)/mean/GP_BMDP_ROVER$(trial_num).pdf")
+	else
+		savefig("/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/$(trial_name)/mean/GP_BMDP_ROVER$(trial_num).pdf")
+	end
 
 end
 
 
-function plot_true_map(true_map, trial_num)
+function plot_true_map(true_map, trial_num, trial_name, use_ssh_dir)
 	heatmap(collect(1:10), collect(1:10), true_map', colorbar = true, c = cgrad(:davos, rev = true), xlims = (0.5, 10.5), ylims = (0.5, 10.5), legend = false, aspectratio = :equal, clim=(0,1), grid=false, levels = collect(-0.2:0.1:1.2), axis=false, ticks=false, title="True Map") # xlims = (1, 10), ylims = (1, 10)
-	savefig("/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/true_map/true_map$(trial_num).png")
+
+	if use_ssh_dir
+		savefig("/home/jott2/figures/GP_BMDP_Rover/$(trial_name)/true_map/true_map$(trial_num).png")
+	else
+		savefig("/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/$(trial_name)/true_map/true_map$(trial_num).png")
+	end
 end
 #
-function plot_error_map(true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, trial_num)
+function plot_error_map(true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, trial_num, trial_name, use_ssh_dir)
 	k = with_lengthscale(SqExponentialKernel(), 1.0) # NOTE: check length scale
     plot_scale = 1:0.1:10
     X_plot = [[i,j] for i = plot_scale, j = plot_scale]
@@ -246,10 +259,15 @@ function plot_error_map(true_map, state_hist, gp_hist, action_hist, total_reward
 
 		heatmap(collect(plot_scale), collect(plot_scale), error_map', colorbar = true, xlims = (0.5, 10.5), ylims = (0.5, 10.5), legend = false, aspectratio = :equal, clim=(0,1), grid=false, axis=false, ticks=false, title="Difference from True Map")
     end
-    Plots.gif(anim, "/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/error_map/error_map$(trial_num).gif", fps = 2)
+
+	if use_ssh_dir
+		Plots.gif(anim, "/home/jott2/figures/GP_BMDP_Rover/$(trial_name)/error_map/error_map$(trial_num).gif", fps = 2)
+	else
+		Plots.gif(anim, "/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/$(trial_name)/error_map/error_map$(trial_num).gif", fps = 2)
+	end
 end
 
-function plot_RMSE_trajectory(true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, trial_num)
+function plot_RMSE_trajectory(true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, trial_num, trial_name, use_ssh_dir)
 	k = with_lengthscale(SqExponentialKernel(), 1.0) # NOTE: check length scale
     plot_scale = 1:0.1:10
     X_plot = [[i,j] for i = plot_scale, j = plot_scale]
@@ -291,7 +309,11 @@ function plot_RMSE_trajectory(true_map, state_hist, gp_hist, action_hist, total_
 
         plot(collect(1:i), RMSE_hist, color=RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073), legend=false, xlabel="Trajectory Step", ylabel="RMSE", title="RMSE")
     end
-    Plots.gif(anim, "/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/RMSE_traj/RMSE_traj$(trial_num).gif", fps = 2)
+	if use_ssh_dir
+		Plots.gif(anim, "/home/jott2/figures/GP_BMDP_Rover/$(trial_name)/RMSE_traj/RMSE_traj$(trial_num).gif", fps = 2)
+	else
+		Plots.gif(anim, "/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/$(trial_name)/RMSE_traj/RMSE_traj$(trial_num).gif", fps = 2)
+	end
 end
 
 #TODO: in order to do this you would need the history of historys for GP hist, state_hist, and history of true_maps
@@ -343,7 +365,7 @@ function calculate_rmse_along_traj(true_map, state_hist, gp_hist, action_hist, t
 	return RMSE_hist
 end
 
-function plot_RMSE_trajectory_history(rmse_hist)
+function plot_RMSE_trajectory_history(rmse_hist, trial_name, use_ssh_dir)
 	min_length = minimum([length(rmse_hist[i]) for i in 1:length(rmse_hist)])
 	μ = []
 	σ = []
@@ -355,7 +377,16 @@ function plot_RMSE_trajectory_history(rmse_hist)
 		append!(μ, mean(mn))
 		append!(σ, sqrt(var(mn)))
 	end
-	plot(collect(1:min_length), μ, ribbon = 1.96 .* σ, xlabel="Trajectory Step", ylabel="RMSE",title="RMSE", color = RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073))
-	savefig("/Users/joshuaott/icra2022/figures/RMSE_traj.pdf")
+	if trial_name == "gp_mcts_dpw"
+		plot(collect(1:min_length), μ, ribbon = σ, xlabel="Trajectory Step", ylabel="RMSE",title="RMSE", legend=true, label="GPMCTS-DPW", color = RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073))
+	else
+		plot(collect(1:min_length), μ, ribbon = σ, xlabel="Trajectory Step", ylabel="RMSE",title="RMSE", legend=true, label="Raster", color = RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073))
+	end
+	
+	if use_ssh_dir
+		savefig("/home/jott2/icra2022/figures/RMSE_traj_$(trial_name).pdf")
+	else
+		savefig("/Users/joshuaott/icra2022/figures/RMSE_traj_$(trial_name).pdf")
+	end
 
 end
