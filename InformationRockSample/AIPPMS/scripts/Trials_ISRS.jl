@@ -104,6 +104,12 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
     pomcp_gcb_rewards = Vector{Float64}(undef, 0)
     pomcp_basic_rewards = Vector{Float64}(undef, 0)
 
+	total_planning_time_gcb = 0
+	total_plans_gcb = 0
+
+	total_planning_time_basic = 0
+	total_plans_basic = 0
+
     i = 1
     idx = 1
     while idx <= num_graph_trials
@@ -161,12 +167,16 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
         pomcp_basic_reward = 0.0
 
 		try
-			pomcp_gcb_reward, state_hist, location_states_hist, action_hist, reward_hist = graph_trial(rng, pomdp, pomcp_gcb_policy, pomcp_isterminal)
+			pomcp_gcb_reward, state_hist, location_states_hist, action_hist, reward_hist, planning_time, num_plans = graph_trial(rng, pomdp, pomcp_gcb_policy, pomcp_isterminal)
+			total_planning_time_gcb += planning_time
+			total_plans_gcb += num_plans
 			# plot_trial(state_hist, location_states_hist, action_hist, reward_hist, i, "gcb")
 			@show pomcp_gcb_reward
 
 
 			pomcp_basic_reward, state_hist, location_states_hist, action_hist, reward_hist = graph_trial(rng, pomdp, pomcp_basic_policy, pomcp_isterminal)
+			total_planning_time_basic += planning_time
+			total_plans_basic += num_plans
 			# plot_trial(state_hist, location_states_hist, action_hist, reward_hist, i, "basic")
 			@show pomcp_basic_reward
 		catch y
@@ -202,6 +212,9 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
         push!(pomcp_gcb_rewards, pomcp_gcb_reward)
         push!(pomcp_basic_rewards, pomcp_basic_reward)
     end
+
+	println("POMCP GCB average planning time: ", total_planning_time_gcb/total_plans_gcb)
+	println("POMCP Basic average planning time: ", total_planning_time_basic/total_plans_basic)
 
     @show mean(pomcp_gcb_rewards)
     @show mean(pomcp_basic_rewards)

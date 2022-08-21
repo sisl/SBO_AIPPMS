@@ -242,10 +242,13 @@ function graph_trial(rng::RNG, pomdp::POMDPs.POMDP, policy, isterminal::Function
     location_states_hist = [deepcopy(state.location_states)]
     action_hist = []
     reward_hist = []
+    total_planning_time = 0
 
     total_reward = 0.0
     while true
-        a = policy(belief_state)
+        a, t = @timed policy(belief_state)
+
+        total_planning_time += t
 
         if isterminal(state)
             break
@@ -267,7 +270,7 @@ function graph_trial(rng::RNG, pomdp::POMDPs.POMDP, policy, isterminal::Function
         reward_hist = vcat(reward_hist, deepcopy(total_reward))
     end
 
-    return total_reward, state_hist, location_states_hist, action_hist, reward_hist
+    return total_reward, state_hist, location_states_hist, action_hist, reward_hist, total_planning_time, length(reward_hist)
 end
 
 function get_pomcp_gcb_policy(env, pomdp, budget, rng,  max_depth=20, queries = 100, lambda=0.00001)
