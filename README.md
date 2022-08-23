@@ -1,4 +1,4 @@
-<div style="text-align: right"> Sequential Bayesian Optimization for  <br /> Adaptive Informative Path Planning with Multimodal Sensing </div>
+<div style="text-align: center"> # Sequential Bayesian Optimization for  <br /> Adaptive Informative Path Planning with Multimodal Sensing </div>
 <!-- <p align="center">
 # Sequential Bayesian Optimization for  <br /> Adaptive Informative Path Planning with Multimodal Sensing
 </p> -->
