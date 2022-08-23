@@ -1,4 +1,6 @@
+<p align="center">
 # Sequential Bayesian Optimization for  <br /> Adaptive Informative Path Planning with Multimodal Sensing
+</p>
 
 ![](https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/Figure1.jpg)
 
