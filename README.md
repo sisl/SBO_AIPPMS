@@ -1,7 +1,5 @@
-<div style="text-align: center"> # Sequential Bayesian Optimization for  <br /> Adaptive Informative Path Planning with Multimodal Sensing </div>
-<!-- <p align="center">
-# Sequential Bayesian Optimization for  <br /> Adaptive Informative Path Planning with Multimodal Sensing
-</p> -->
+#                     Sequential Bayesian Optimization for  <br /> Adaptive Informative Path Planning with Multimodal Sensing
+
 
 ![](https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/Figure1.jpg)
 
