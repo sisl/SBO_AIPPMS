@@ -1,6 +1,6 @@
-# Gaussian Process Adaptive Informative Path Planning with Multimodal Sensing
+# Sequential Bayesian Optimization for Adaptive Informative Path Planning with Multimodal Sensing
 
-![](https://github.com/josh0tt/GP_AIPPMS/blob/main/img/Figure1.jpg)
+![](https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/Figure1.jpg)
 
 <!--
 # GPAIPPMS
@@ -35,9 +35,9 @@ We have included their code in this repository for future benchmarking with the 
 
 Gaussian Process Belief MDP formulation using MCTS-DPW
 <p align="center">
-  <img alt="Mean" src="https://github.com/josh0tt/GP_AIPPMS/blob/main/img/mean.gif" width="45%">
+  <img alt="Mean" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/mean.gif" width="45%">
 &nbsp; &nbsp; &nbsp; &nbsp;
-  <img alt="Variance" src="https://github.com/josh0tt/GP_AIPPMS/blob/main/img/var.gif" width="45%">
+  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/var.gif" width="45%">
 </p>
 
 INCLUDE TABLE WITH RESULTS 
