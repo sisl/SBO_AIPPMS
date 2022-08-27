@@ -11,7 +11,13 @@ const ISRSPos = SVector{2, Int64}
 const ISRSWorldState = WorldState{ISRS_STATE}
 const ISRSLocationBeliefState = SparseCat{SVector{4,ISRS_STATE}, SVector{4,Float64}}
 const ISRSBeliefState = WorldBeliefState{ISRSLocationBeliefState}
+struct WorldObservation{LS}
+    obs_current::Int
+    obs_location_states::Vector{LS}
+    obs_cost_expended::Float64
+end
 const ISRSObservation = WorldObservation{ISRS_STATE}
+
 
 struct ISRSSensor <: Sensor
     energy_cost::Float64
@@ -230,7 +236,7 @@ function Base.rand(rng::AbstractRNG, pomdp::ISRSPOMDP, b::ISRSBeliefState)
         end
     end
 
-    return ISRSWorldState(b.current, b.visited, corrected_location_states, b.cost_expended)
+    return ISRSWorldState(b.current, corrected_location_states, b.cost_expended)
 end
 
 function POMDPs.isterminal(pomdp::ISRSPOMDP, s::ISRSWorldState)
@@ -240,7 +246,7 @@ function POMDPs.isterminal(pomdp::ISRSPOMDP, s::ISRSWorldState)
     # to exit we have to go back to the starting location
     if s.cost_expended + pomdp.shortest_paths[s.current, init_idx] >= pomdp.cost_budget
         return true
-    elseif s.current == init_idx && length(s.visited) > 1
+    elseif s.current == init_idx #&& length(s.visited) > 1
         neighbors = Graphs.neighbors(pomdp.env.location_graph, init_idx)
         min_cost_from_start = minimum([pomdp.shortest_paths[init_idx, n] for n in neighbors])
         if (pomdp.cost_budget - s.cost_expended) <= 2*min_cost_from_start
@@ -260,7 +266,7 @@ function POMDPs.isterminal(pomdp::ISRSPOMDP, b::WorldBeliefState)
     # to exit we have to go back to the starting location
     if b.cost_expended + pomdp.shortest_paths[b.current, init_idx] >= pomdp.cost_budget
         return true
-    elseif b.current == init_idx && length(b.visited) > 1
+    elseif b.current == init_idx #&& length(b.visited) > 1
         neighbors = Graphs.neighbors(pomdp.env.location_graph, init_idx)
         min_cost_from_start = minimum([pomdp.shortest_paths[init_idx, n] for n in neighbors])
         if (pomdp.cost_budget - b.cost_expended) <= 2*min_cost_from_start
@@ -285,7 +291,6 @@ function generate_s(pomdp::ISRSPOMDP, s::ISRSWorldState, a::MultimodalIPPAction,
 
         new_location_states = deepcopy(s.location_states)
 
-        new_visited = union(Set{Int}([a.visit_location]), s.visited)
         visit_cost = pomdp.shortest_paths[s.current, a.visit_location]
         new_cost_expended = s.cost_expended + visit_cost
 
@@ -297,14 +302,14 @@ function generate_s(pomdp::ISRSPOMDP, s::ISRSWorldState, a::MultimodalIPPAction,
         # if a.visit_location in s.visited && s.location_states[a.visit_location] == RSGOOD
         if s.location_states[a.visit_location] == RSGOOD || s.location_states[a.visit_location] == RSBAD
             new_location_states[a.visit_location] = RSBAD
-            sp = ISRSWorldState(a.visit_location, new_visited, new_location_states, new_cost_expended)
+            sp = ISRSWorldState(a.visit_location, new_location_states, new_cost_expended)
         else
-            sp = ISRSWorldState(a.visit_location, new_visited, new_location_states, new_cost_expended)
+            sp = ISRSWorldState(a.visit_location, new_location_states, new_cost_expended)
         end
 
     else
         new_cost_expended = s.cost_expended + get_energy_cost(a.sensing_action)
-        sp = ISRSWorldState(s.current, s.visited, s.location_states, new_cost_expended)
+        sp = ISRSWorldState(s.current, s.location_states, new_cost_expended)
     end
 
     return sp
@@ -312,7 +317,7 @@ end
 
 function POMDPs.transition(pomdp::ISRSPOMDP, s::ISRSWorldState, a::Vector{MultimodalIPPAction})
     # return a terminal state if we receive MultimodalIPPAction[] as empty
-    return ISRSWorldState(s.current, s.visited, s.location_states, pomdp.cost_budget*10)
+    return ISRSWorldState(s.current, s.location_states, pomdp.cost_budget*10)
 end
 
 
@@ -362,7 +367,7 @@ end
 
 # Utility of visiting location, given what I've visited already
 # Here it is simple - if good rock visited already
-function marginal_utility(env::ISRSEnv, next_visit::Int, visited::Set{Int},
+function marginal_utility(env::ISRSEnv, next_visit::Int,
                           location_states::Vector{ISRS_STATE})
 
     # If rock visited already OR visited location is bad, set penalty, else reward
@@ -407,7 +412,7 @@ function initial_belief_state(pomdp::ISRSPOMDP)
 
     curr = LinearIndices(pomdp.map_size)[pomdp.init_pos[1], pomdp.init_pos[2]]
 
-    return ISRSBeliefState(curr, Set{Int}(curr), pomdp.f_prior, 0.0)
+    return ISRSBeliefState(curr, pomdp.f_prior, 0.0)
 end
 
 

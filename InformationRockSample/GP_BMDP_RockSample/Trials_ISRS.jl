@@ -251,18 +251,18 @@ end
 
 function initialstate(pomdp::ISRSPOMDP)
     curr = LinearIndices(pomdp.map_size)[pomdp.init_pos[1], pomdp.init_pos[2]]
-    return ISRSWorldState(curr, Set{Int}([curr]), pomdp.env.location_states, 0.0)
+    return ISRSWorldState(curr,pomdp.env.location_states, 0.0)
 end
 
 function initialstate(bmdp::BeliefMDP)
     curr = LinearIndices(bmdp.pomdp.map_size)[bmdp.pomdp.init_pos[1], bmdp.pomdp.init_pos[2]]
-    return ISRSBeliefState(curr, Set{Int}(curr), bmdp.pomdp.f_prior, 0.0)
+    return ISRSBeliefState(curr, bmdp.pomdp.f_prior, 0.0)
 end
 
 function run_rock_sample_bmdp(rng::RNG, bmdp::BeliefMDP, policy, isterminal::Function) where {RNG<:AbstractRNG}
 
     belief_state = initialstate(bmdp)
-	true_s = WorldState(belief_state.current, belief_state.visited, bmdp.pomdp.env.location_states, belief_state.cost_expended)
+	true_s = WorldState(belief_state.current, bmdp.pomdp.env.location_states, belief_state.cost_expended)
 
     # belief_state = initial_belief_state(bmdp, rng)
 	state_hist = [deepcopy(belief_state.current)]
@@ -473,7 +473,7 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
 
         push!(gp_mcts_rewards, gp_mcts_reward)
     end
-	
+
 	println("average planning time: ", total_planning_time/total_plans)
     @show mean(gp_mcts_rewards)
 

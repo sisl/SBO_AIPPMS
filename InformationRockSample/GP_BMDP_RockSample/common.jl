@@ -31,7 +31,7 @@ function exp_info_gain(env::E, curr_bel_state::BS, s::SN) where {E <: Environmen
     # Now obtain a new belief state
     new_bel_state_set = belief_update_location_states_sensor(env, curr_bel_state.gp,
                                                              obs_location_states, curr_bel_state.current, s)
-    new_bel_state = BS(curr_bel_state.current, curr_bel_state.visited, new_bel_state_set, curr_bel_state.cost_expended)
+    new_bel_state = BS(curr_bel_state.current, new_bel_state_set, curr_bel_state.cost_expended)
 
     information_gain = average_mode_density(new_bel_state) - average_mode_density(curr_bel_state)
 
@@ -42,10 +42,10 @@ end
 function generate_o(pomdp::P, s::S, a::MultimodalIPPAction, sp::S, rng::RNG) where {P <: POMDPs.POMDP, S <: WorldState, RNG <: AbstractRNG}
     O = obstype(P)
     if a.visit_location != nothing
-        o = O(sp.current, sp.visited, sp.location_states, sp.cost_expended)
+        o = O(sp.current, sp.location_states, sp.cost_expended)
     else
         new_obs_location_states = sample_location_states(pomdp.env, s.current, a.sensing_action, rng)
-        o = O(sp.current, sp.visited, new_obs_location_states, sp.cost_expended)
+        o = O(sp.current, new_obs_location_states, sp.cost_expended)
     end
 
     return o
@@ -54,7 +54,7 @@ end
 # NOTE: Can be used for both simulated and true rewards - if sp is true new state
 function POMDPs.reward(pomdp::P, s::S, a::MultimodalIPPAction) where {P <: POMDPs.POMDP, S <: WorldState}
     if a.visit_location != nothing
-        return marginal_utility(pomdp.env, a.visit_location, s.visited, s.location_states)
+        return marginal_utility(pomdp.env, a.visit_location, s.location_states)
     else
         return 0
     end
@@ -158,7 +158,7 @@ end
 # end
 
 function graph_trial_reward(pomdp::P, s::S, a::MultimodalIPPAction, sp::S) where {P <: POMDPs.POMDP, S <: WorldState}
-    return marginal_utility(pomdp.env, sp.current, s.visited, s.location_states)
+    return marginal_utility(pomdp.env, sp.current, s.location_states)
 end
 
 function Base.rand(rng::AbstractRNG, b::BS) where BS <: WorldBeliefState
@@ -170,7 +170,7 @@ function Base.rand(rng::AbstractRNG, b::BS) where BS <: WorldBeliefState
         push!(location_states, sample)
     end
 
-    return WorldState(b.current, b.visited, location_states, b.cost_expended)
+    return WorldState(b.current, location_states, b.cost_expended)
 end
 
 
@@ -178,7 +178,6 @@ function update_belief(pomdp::P, b::BS, a::MultimodalIPPAction, o::O) where {P <
 
     if a.visit_location != nothing
 
-         new_visited = union(Set{Int}([a.visit_location]), b.visited)
          visit_cost = pomdp.shortest_paths[b.current, a.visit_location]
          new_cost_expended = b.cost_expended + visit_cost
 
@@ -194,9 +193,9 @@ function update_belief(pomdp::P, b::BS, a::MultimodalIPPAction, o::O) where {P <
              y = 0.0 #we know it becomes bad if it was good and we know it is bad if it was bad
              σ²_n = 1e-9 # don't square this causes singular exception in belief update
              f_posterior = posterior(b.gp, [[CartesianIndices(pomdp.map_size)[a.visit_location].I[1], CartesianIndices(pomdp.map_size)[a.visit_location].I[2]]], [y], [σ²_n])
-             bp = ISRSBeliefState(a.visit_location, new_visited, f_posterior, new_cost_expended)
+             bp = ISRSBeliefState(a.visit_location, f_posterior, new_cost_expended)
          else
-             bp = ISRSBeliefState(a.visit_location, new_visited, b.gp, new_cost_expended)
+             bp = ISRSBeliefState(a.visit_location, b.gp, new_cost_expended)
          end
 
      else
@@ -232,7 +231,7 @@ function update_belief(pomdp::P, b::BS, a::MultimodalIPPAction, o::O) where {P <
              end
          end
 
-         bp = ISRSBeliefState(b.current, b.visited, f_posterior, new_cost_expended)
+         bp = ISRSBeliefState(b.current, f_posterior, new_cost_expended)
      end
 
      return bp

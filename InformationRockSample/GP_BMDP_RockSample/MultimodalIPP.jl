@@ -91,7 +91,6 @@ end
 
 struct WorldState{LS}
     current::Int
-    visited::Set{Int}
     location_states::Vector{LS}
     cost_expended::Float64
 end
@@ -99,7 +98,6 @@ end
 # Encoding independence assumption here as well
 struct WorldBeliefState{LBS}
     current::Int
-    visited::Set{Int}
     gp::GaussianProcess
     cost_expended::Float64
 end
@@ -110,12 +108,11 @@ The true state belief of the location is updated based on sensor fidelity and di
 The observation includes fully observed components as well - since we don't have a separate interface
 for mixed observability.
 =#
-struct WorldObservation{LS}
-    obs_current::Int
-    obs_visited::Set{Int}
-    obs_location_states::Vector{LS}
-    obs_cost_expended::Float64
-end
+# struct WorldObservation{LS}
+#     obs_current::Int
+#     obs_location_states::Vector{LS}
+#     obs_cost_expended::Float64
+# end
 
 # Functions an environment is expected to implement for
 # the IPPEnvModel to be able to use it
