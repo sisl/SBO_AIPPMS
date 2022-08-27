@@ -1,5 +1,5 @@
 # using MultimodalIPP
-include("/Users/joshuaott/icra2022/AIPPMS/src/MultimodalIPP.jl")
+include("/Users/joshuaott/icra2022/GP_AIPPMS/InformationRockSample/AIPPMS/src/MultimodalIPP.jl")
 using Graphs
 using Random
 using BasicPOMCP
@@ -103,12 +103,16 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
 
     pomcp_gcb_rewards = Vector{Float64}(undef, 0)
     pomcp_basic_rewards = Vector{Float64}(undef, 0)
+	pomcpow_rewards = Vector{Float64}(undef, 0)
 
 	total_planning_time_gcb = 0
 	total_plans_gcb = 0
 
 	total_planning_time_basic = 0
 	total_plans_basic = 0
+
+	total_planning_time_pomcpow = 0
+	total_plans_pomcpow = 0
 
     i = 1
     idx = 1
@@ -159,12 +163,15 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
         pomcp_isterminal(s) = POMDPs.isterminal(pomdp, s)
         naive_isterminal(s) = MultimodalIPP.isterminal_naive(ns, s)
 
-		depth = 30
+		depth = 5
         pomcp_gcb_policy = get_pomcp_gcb_policy(isrs_env, pomdp, total_budget, rng, depth, 100)
         pomcp_basic_policy = get_pomcp_basic_policy(isrs_env, pomdp, total_budget, rng, depth, 100)
+		pomcpow_policy = get_pomcpow_policy(isrs_env, pomdp, total_budget, rng, depth, 100)
+
 
         pomcp_gcb_reward = 0.0
         pomcp_basic_reward = 0.0
+		pomcpow_reward = 0.0
 
 		try
 			pomcp_gcb_reward, state_hist, location_states_hist, action_hist, reward_hist, planning_time, num_plans = graph_trial(rng, pomdp, pomcp_gcb_policy, pomcp_isterminal)
@@ -179,6 +186,13 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
 			total_plans_basic += num_plans
 			# plot_trial(state_hist, location_states_hist, action_hist, reward_hist, i, "basic")
 			@show pomcp_basic_reward
+
+			# pomcpow_reward, state_hist, location_states_hist, action_hist, reward_hist = graph_trial(rng, pomdp, pomcpow_policy, pomcp_isterminal)
+			# total_planning_time_pomcpow += planning_time
+			# total_plans_pomcpow += num_plans
+			# # plot_trial(state_hist, location_states_hist, action_hist, reward_hist, i, "pomcpow")
+			# @show pomcpow_reward
+
 		catch y
 			if isa(y, InterruptException)
                 throw(InterruptException)
@@ -211,13 +225,18 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
 
         push!(pomcp_gcb_rewards, pomcp_gcb_reward)
         push!(pomcp_basic_rewards, pomcp_basic_reward)
+		push!(pomcpow_rewards, pomcpow_reward)
+
     end
 
 	println("POMCP GCB average planning time: ", total_planning_time_gcb/total_plans_gcb)
 	println("POMCP Basic average planning time: ", total_planning_time_basic/total_plans_basic)
+	println("POMCPOW average planning time: ", total_planning_time_pomcpow/total_plans_pomcpow)
+
 
     @show mean(pomcp_gcb_rewards)
     @show mean(pomcp_basic_rewards)
+	@show mean(pomcpow_rewards)
 
     outfile_pomcp_gcb = string("isrs-pomcp-gcb-",pref,".json")
     open(outfile_pomcp_gcb,"w") do f

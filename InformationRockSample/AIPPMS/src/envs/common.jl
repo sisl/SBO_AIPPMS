@@ -39,6 +39,7 @@ function exp_info_gain(env::E, curr_bel_state::BS, s::SN) where {E <: Environmen
 end
 
 
+
 function generate_o(pomdp::P, s::S, a::MultimodalIPPAction, sp::S, rng::RNG) where {P <: POMDPs.POMDP, S <: WorldState, RNG <: AbstractRNG}
     O = obstype(P)
     if a.visit_location != nothing
@@ -274,6 +275,8 @@ function graph_trial(rng::RNG, pomdp::POMDPs.POMDP, policy, isterminal::Function
 end
 
 function get_pomcp_gcb_policy(env, pomdp, budget, rng,  max_depth=20, queries = 100, lambda=0.00001)
+# function get_pomcp_gcb_policy(env, pomdp, budget, rng,  max_depth=20, queries = 100, lambda=0.1)
+
     rollout_policy = MultimodalIPPGreedyPolicy(pomdp, lambda, rng)
     value_estimate = PORollout(rollout_policy, MultimodalIPPBeliefUpdater(pomdp))
     solver = POMCPSolver(rng=rng, estimate_value=value_estimate, max_depth=max_depth, tree_queries = queries)
@@ -285,6 +288,12 @@ function get_pomcp_basic_policy(env, pomdp, budget, rng, max_depth=20, queries =
     solver = POMCPSolver(rng=rng, max_depth=max_depth, tree_queries = queries)
     pomcp_policy = solve(solver, pomdp)
     return b -> action(pomcp_policy, b)
+end
+
+function get_pomcpow_policy(env, pomdp, budget, rng, max_depth=20, queries = 100)
+    solver = POMCPOWSolver(rng=rng, max_depth=max_depth, tree_queries = queries, criterion=MaxUCB(20.0))
+    pomcpow_policy = solve(solver, pomdp)
+    return b -> action(pomcpow_policy, b)
 end
 
 

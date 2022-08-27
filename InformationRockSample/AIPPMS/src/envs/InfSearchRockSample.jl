@@ -142,7 +142,7 @@ end
 # POMDPs.n_actions(pomdp::ISRSPOMDP) = length(pomdp.actions)
 POMDPs.actions(pomdp::ISRSPOMDP) = pomdp.actions
 action_index(pomdp::ISRSPOMDP, a::MultimodalIPPAction) = a.idx
-POMDPs.discount(pomdp::ISRSPOMDP) = 1.0
+POMDPs.discount(pomdp::ISRSPOMDP) = 0.999999#1.0
 
 function actions_possible_from_current(pomdp::ISRSPOMDP, current::Int,
                                        cost_expended::Float64)
@@ -246,6 +246,18 @@ function generate_s(pomdp::ISRSPOMDP, s::ISRSWorldState, a::MultimodalIPPAction,
 
     return sp
 end
+
+# function POMDPs.observation(pomdp::P, s::S, a::MultimodalIPPAction, sp::S) where {P <: POMDPs.POMDP, S <: ISRSWorldState}
+#     O = obstype(P)
+#     if a.visit_location != nothing
+#         o = O(sp.current, sp.visited, sp.location_states, sp.cost_expended)
+#     else
+#         new_obs_location_states = sample_location_states(pomdp.env, s.current, a.sensing_action, pomdp.rng)
+#         o = O(sp.current, sp.visited, new_obs_location_states, sp.cost_expended)
+#     end
+#
+#     return o
+# end
 
 function POMDPs.gen(pomdp::ISRSPOMDP, s::ISRSWorldState, a::MultimodalIPPAction, rng::RNG) where {RNG <: AbstractRNG}
     sp = generate_s(pomdp, s, a, rng)

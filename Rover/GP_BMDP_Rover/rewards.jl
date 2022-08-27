@@ -41,13 +41,13 @@ function belief_reward(pomdp::RoverPOMDP, b::RoverBelief, a::Symbol, bp::RoverBe
         return 0
     else
         if b.location_belief.X == []
-            μ_init, ν_init = query_no_data(b.location_belief)
+            μ_init, ν_init, S_init = query_no_data(b.location_belief)
         else
             μ_init, ν_init, S_init = query(b.location_belief)
         end
 
         if bp.location_belief.X == []
-            μ_post, ν_post = query_no_data(bp.location_belief)
+            μ_post, ν_post, S_post = query_no_data(bp.location_belief)
         else
             μ_post, ν_post, S_post = query(bp.location_belief)
         end
@@ -72,7 +72,10 @@ function belief_reward(pomdp::RoverPOMDP, b::RoverBelief, a::Symbol, bp::RoverBe
                 r +=  pomdp.new_sample_reward
             end
         else
+            # entropy reduction 
             variance_reduction = (sum(ν_init) - sum(ν_post))
+            # mutual information
+            # variance_reduction = 0.5*logdet(S_init) - 0.5*logdet(S_post)
             # TODO: pass lamda in as a parameter to pomdp struct
             r += 1*variance_reduction
         end

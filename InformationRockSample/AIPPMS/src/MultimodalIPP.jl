@@ -23,6 +23,7 @@ using POMDPModels
 using POMDPModelTools
 using POMDPPolicies
 using BasicPOMCP
+using POMCPOW
 using POMDPTools
 
 # For NAIVE

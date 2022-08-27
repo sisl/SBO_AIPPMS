@@ -34,7 +34,7 @@ function query_no_data(GP::GaussianProcess)
     μₚ = GP.mXq
     S = GP.KXqXq
     νₚ = diag(S) .+ eps() # eps prevents numerical issues
-    return (μₚ, νₚ)
+    return (μₚ, νₚ, S)
 end
 
 function query(GP::GaussianProcess)

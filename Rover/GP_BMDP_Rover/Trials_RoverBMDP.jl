@@ -251,6 +251,7 @@ function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map
 		# GP-MCTS-DPW
 		gp_mcts_reward, state_hist, gp_hist, action_hist, reward_hist, total_reward_hist, planning_time, num_plans = run_rover_bmdp(rng, bmdp, gp_bmdp_policy, gp_bmdp_isterminal)
 		total_planning_time_gp_mcts += planning_time
+		println("average planning time: ", planning_time/num_plans)
 		total_plans_gp_mcts += num_plans
 		rmse_hist_gp_mcts = vcat(rmse_hist_gp_mcts, [calculate_rmse_along_traj(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)])
 		if plot_results
@@ -309,4 +310,4 @@ function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map
 end
 
 
-solver_test_RoverBMDP("test", number_of_sample_types=10, total_budget = 100.0, use_ssh_dir=true, plot_results=false)
+solver_test_RoverBMDP("test", number_of_sample_types=10, total_budget = 100.0, use_ssh_dir=false, plot_results=false)
