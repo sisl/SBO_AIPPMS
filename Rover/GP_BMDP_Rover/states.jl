@@ -16,5 +16,5 @@ end
 
 function POMDPs.initialstate(pomdp::RoverPOMDP)
     curr = LinearIndices(pomdp.map_size)[pomdp.init_pos[1], pomdp.init_pos[2]]
-    return RoverState(curr, Set{Int}([curr]), pomdp.true_map, 0.0, Set{Float64}(Float64[]))
+    return RoverState(curr, pomdp.true_map, 0.0, Set{Float64}(Float64[]))
 end

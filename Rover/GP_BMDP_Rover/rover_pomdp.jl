@@ -16,7 +16,6 @@ const RoverPos = SVector{2,Int}
 
 struct RoverState
     pos::Int
-    visited::Set{Int}
     location_states::Matrix{Float64}
     cost_expended::Float64
     drill_samples::Set{Float64}
@@ -29,7 +28,6 @@ end
 
 struct RoverBelief
     pos::Int
-    visited::Set{Int}
     location_belief::GaussianProcess
     cost_expended::Float64
     drill_samples::Set{Float64}
@@ -63,7 +61,7 @@ function POMDPs.isterminal(pomdp::RoverPOMDP, s::RoverState)
     if s.cost_expended + shortest_path_to_goal(pomdp, s.pos) >= pomdp.cost_budget
         return true
 
-    elseif pos_cartesian == RoverPos(pomdp.goal_pos[1], pomdp.goal_pos[2])  && length(s.visited) > 1
+    elseif pos_cartesian == RoverPos(pomdp.goal_pos[1], pomdp.goal_pos[2])  #&& length(s.visited) > 1
 
         neighbor_actions = actions_possible_from_current(pomdp, s.pos, s.cost_expended)#POMDPs.actions(pomdp, s)
 

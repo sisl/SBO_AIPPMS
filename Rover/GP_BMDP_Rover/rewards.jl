@@ -72,12 +72,12 @@ function belief_reward(pomdp::RoverPOMDP, b::RoverBelief, a::Symbol, bp::RoverBe
                 r +=  pomdp.new_sample_reward
             end
         else
-            # entropy reduction 
+            # entropy reduction
             variance_reduction = (sum(ν_init) - sum(ν_post))
             # mutual information
             # variance_reduction = 0.5*logdet(S_init) - 0.5*logdet(S_post)
             # TODO: pass lamda in as a parameter to pomdp struct
-            r += 1*variance_reduction
+            r += 0.1*variance_reduction
         end
     end
 

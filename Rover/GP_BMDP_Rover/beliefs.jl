@@ -7,7 +7,7 @@ function Base.rand(rng::AbstractRNG, pomdp::RoverPOMDP, b::RoverBelief)
     location_states = rand(rng, b.location_belief, b.location_belief.mXq, b.location_belief.KXqXq)
     location_states = reshape(location_states, pomdp.map_size)
 
-    return RoverState(b.pos, b.visited, location_states, b.cost_expended, b.drill_samples)
+    return RoverState(b.pos, location_states, b.cost_expended, b.drill_samples)
 end
 
 
@@ -43,20 +43,19 @@ function update_belief(pomdp::P, b::RoverBelief, a::Symbol, o::Float64, rng::RNG
         new_cost_expended = b.cost_expended + visit_cost
         new_drill_samples = union(Set{Float64}([o]), b.drill_samples)
 
-        return RoverBelief(b.pos, b.visited, f_posterior, new_cost_expended, new_drill_samples)
+        return RoverBelief(b.pos, f_posterior, new_cost_expended, new_drill_samples)
 
     else
         pos = convert_pos_idx_2_pos_coord(pomdp, b.pos) + pomdp.step_size*dir[a]
         new_pos = convert_pos_coord_2_pos_idx(pomdp, pos)
         new_cost_expended = b.cost_expended + visit_cost
-        new_visited = union(Set{Int}([new_pos]), b.visited)
 
         spec_pos = convert_pos_idx_2_pos_coord(pomdp, new_pos)
         σ²_n = pomdp.σ_spec^2
         f_posterior = posterior(b.location_belief, [[spec_pos[1], spec_pos[2]]], [o], [σ²_n])
 
 
-        return RoverBelief(new_pos, new_visited, f_posterior, new_cost_expended, b.drill_samples)
+        return RoverBelief(new_pos, f_posterior, new_cost_expended, b.drill_samples)
 
     end
 end
@@ -79,11 +78,10 @@ end
 function initial_belief_state(pomdp::RoverPOMDP, rng::RNG) where {RNG <: AbstractRNG}
 
     pos = LinearIndices(pomdp.map_size)[pomdp.init_pos[1], pomdp.init_pos[2]]
-    visited = Set{Int}(pos)
     location_belief = pomdp.f_prior
     cost_expended = 0.0
     drill_samples = Set{Float64}(Float64[])
 
-    return RoverBelief(pos, visited, location_belief, cost_expended, drill_samples)
+    return RoverBelief(pos, location_belief, cost_expended, drill_samples)
 
 end
