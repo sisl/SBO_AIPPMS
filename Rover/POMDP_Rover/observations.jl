@@ -1,9 +1,10 @@
 # Observations
 
 function generate_o(pomdp::RoverPOMDP, s::RoverState, action::Symbol, sp::RoverState, rng::AbstractRNG)
-    if isterminal(pomdp, sp)
-        return -1.0
-    end
+    # if isterminal(pomdp, sp)
+    #     println("HERE")
+    #     return -1.0
+    # end
 
     # Remember you make the observation at sp NOT s
     if action == :drill

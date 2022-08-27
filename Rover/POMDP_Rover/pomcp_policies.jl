@@ -100,7 +100,7 @@ function POMDPs.action(p::MultimodalIPPGreedyPolicy, b::RoverBelief)
         end
     end
 
-    return possible_actions[rand(p.rng, length(possible_actions))]
+    return possible_actions[rand(p.rng, 1:length(possible_actions))]
 end
 
 
@@ -139,7 +139,7 @@ function POMDPs.action(p::MultimodalIPPGreedyPolicy, s::RoverState)
         end
     end
 
-    return possible_actions[rand(p.rng, length(possible_actions))]
+    return possible_actions[rand(p.rng, 1:length(possible_actions))]
 end
 
 

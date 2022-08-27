@@ -85,12 +85,15 @@ function POMDPs.isterminal(pomdp::RoverPOMDP, s::RoverState)
 end
 
 function POMDPs.isterminal(pomdp::RoverPOMDP, b::RoverBelief)
-    if b.cost_expended + shortest_path_to_goal(pomdp, b.pos) > pomdp.cost_budget
-        return true
-    else
-        return false
-    end
+    return isterminal(pomdp, rand(pomdp.rng, b))
 end
+# function POMDPs.isterminal(pomdp::RoverPOMDP, b::RoverBelief)
+#     if b.cost_expended + shortest_path_to_goal(pomdp, b.pos) > pomdp.cost_budget
+#         return true
+#     else
+#         return false
+#     end
+# end
 
 function POMDPs.gen(pomdp::RoverPOMDP, s::RoverState, a::Symbol, rng::RNG) where {RNG <: AbstractRNG}
     sp = generate_s(pomdp, s, a, rng)

@@ -104,8 +104,8 @@ function run_rover_pomdp(rng::RNG, pomdp::POMDPs.POMDP, policy, isterminal::Func
 		# println("True Value: ", pomdp.true_map[new_state.pos])
 		# println("Drill Samples: ", new_state.drill_samples)
 		#
-		# # println("Particles: ", belief_state.location_belief.particles[:, new_state.pos])
-		# # println("Weights: ", belief_state.location_belief.weights[:, new_state.pos])
+		# println("Particles: ", belief_state.location_belief.particles[:, new_state.pos])
+		# println("Weights: ", belief_state.location_belief.weights[:, new_state.pos])
 		# println("")
 
         belief_state = update_belief(pomdp, belief_state, a, obs, rng)
@@ -166,7 +166,7 @@ function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, ma
         pomcp_isterminal(s) = POMDPs.isterminal(pomdp, s)
         # naive_isterminal(s) = MultimodalIPP.isterminal_naive(ns, s)
 
-		depth = 30
+		depth = 5
         pomcp_gcb_policy = get_pomcp_gcb_policy(pomdp, rng, depth, 100)
         pomcp_basic_policy = get_pomcp_basic_policy(pomdp, rng, depth, 100)
 
@@ -183,6 +183,7 @@ function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, ma
 			plot_trial_with_mean(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "gcb", use_ssh_dir)
 		end
 		@show pomcp_gcb_reward
+		println("average planning time: ", planning_time/num_plans)
 
 		# Basic
 		pomcp_basic_reward, state_hist, belief_hist, action_hist, obs_hist, reward_hist, total_reward_hist, planning_time, num_plans = run_rover_pomdp(rng, pomdp, pomcp_basic_policy, pomcp_isterminal)
@@ -194,6 +195,8 @@ function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, ma
 			plot_trial_with_mean(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "basic", use_ssh_dir)
 		end
 		@show pomcp_basic_reward
+		println("average planning time: ", planning_time/num_plans)
+
 
 
         i = i+1
@@ -226,4 +229,4 @@ function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, ma
 end
 
 
-solver_test_RoverPOMDP("test", number_of_sample_types=10, total_budget = 100.0, use_ssh_dir=false, plot_results=true)
+solver_test_RoverPOMDP("test", number_of_sample_types=10, total_budget = 30.0, use_ssh_dir=false, plot_results=false)

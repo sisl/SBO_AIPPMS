@@ -26,6 +26,7 @@ end
 
 
 function update_belief(pomdp::P, b::RoverBelief, a::Symbol, o::Float64, rng::RNG) where {P <: POMDPs.POMDP, RNG <: AbstractRNG}
+    # check is sp is terminal
     if isterminal(pomdp, b)
         return b
     end
@@ -43,8 +44,11 @@ function update_belief(pomdp::P, b::RoverBelief, a::Symbol, o::Float64, rng::RNG
 
     if a == :drill
         # if we drill we fully collapse the belief
-        particles[:, b.pos] .= o
-        weights[:, b.pos] .= 1/length(particles[:, b.pos])
+        idx = first(findall(x-> x== o, pomdp.sample_types))
+        weights[:, b.pos] .= 0.0
+        weights[idx, b.pos] = 1.0
+        # particles[:, b.pos] .= o
+        # weights[:, b.pos] .= 1/length(particles[:, b.pos])
         new_cost_expended = b.cost_expended + visit_cost
         new_drill_samples = union(Set{Float64}([o]), b.drill_samples)
 
@@ -57,7 +61,7 @@ function update_belief(pomdp::P, b::RoverBelief, a::Symbol, o::Float64, rng::RNG
         new_visited = union(Set{Int}([new_pos]), b.visited)
 
         # NOTE: σ_n is the stddev whereas σ²_n is the varaiance. Julia uses σ_n
-        # for normal dist whereas our GP setup uses σ²_n 
+        # for normal dist whereas our GP setup uses σ²_n
         σ_n = pomdp.σ_spec
 
 
@@ -67,8 +71,9 @@ function update_belief(pomdp::P, b::RoverBelief, a::Symbol, o::Float64, rng::RNG
         # end
 
         # NOTE: we only resample at the location the observation was received!
-        weights[:, new_pos] = pdf(Normal(o, σ_n), particles[:,new_pos])
-        particles, weights = resample(pomdp, particles, weights, new_pos, rng)
+        weights[:, new_pos] .*= pdf(Normal(o, σ_n), particles[:,new_pos])
+        weights[:, pos] = weights[:, pos] ./ sum(weights[:, pos])
+        #particles, weights = resample(pomdp, particles, weights, new_pos, rng)
 
 
         return RoverBelief(new_pos, new_visited, ParticleSet(particles, weights), new_cost_expended, b.drill_samples)
@@ -142,8 +147,13 @@ end
 
 function initialize_particles(pomdp::RoverPOMDP, rng::RNG) where {RNG <: AbstractRNG}
     N_particles = 10
-    # particles is Nx5000
+    # particles is Nx100
     particles = rand(rng, pomdp.sample_types, N_particles, pomdp.map_size[1]*pomdp.map_size[2])#rand(rng, Distributions.Uniform(), N_particles, pomdp.map_size[1]*pomdp.map_size[2])
+
+    column(j) = [j for _ =1:100]
+    particles = hcat([column(j) for j=pomdp.sample_types]...)
+    particles = Matrix{Float64}(particles')
+
     weights = (1/N_particles) .* ones((N_particles, pomdp.map_size[1]*pomdp.map_size[2]))
     PS = ParticleSet(particles, weights)
     return PS
