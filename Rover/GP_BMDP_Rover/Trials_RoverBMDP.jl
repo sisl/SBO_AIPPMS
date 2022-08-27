@@ -210,7 +210,7 @@ function raster_policy(pomdp, b)
 	end
 end
 
-function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map_size::Tuple{Int, Int}=(10,10), seed::Int64=1234, num_graph_trials=40, total_budget = 100.0, use_ssh_dir=false, plot_results=true, run_raster=false)
+function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map_size::Tuple{Int, Int}=(10,10), seed::Int64=1234, num_graph_trials=50, total_budget = 100.0, use_ssh_dir=false, plot_results=true, run_raster=false)
 
 	# k = with_lengthscale(SqExponentialKernel(), 1.0) + with_lengthscale(MaternKernel(), 1.0)# NOTE: check length scale
 	k = with_lengthscale(SqExponentialKernel(), 1.0) # NOTE: check length scale

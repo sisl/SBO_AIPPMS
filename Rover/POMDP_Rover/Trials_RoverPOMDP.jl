@@ -135,7 +135,7 @@ function run_rover_pomdp(rng::RNG, pomdp::POMDPs.POMDP, policy, isterminal::Func
 
 end
 
-function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, map_size::Tuple{Int, Int}=(10,10), seed::Int64=1234, num_graph_trials=40, total_budget = 100.0, use_ssh_dir=false, plot_results=true)
+function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, map_size::Tuple{Int, Int}=(10,10), seed::Int64=1234, num_graph_trials=50, total_budget = 100.0, use_ssh_dir=false, plot_results=true)
 
 
 

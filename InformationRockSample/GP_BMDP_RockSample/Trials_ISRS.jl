@@ -368,7 +368,7 @@ end
 
 
 function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=10, num_beacons::Int64=25,
-                          seed::Int64=1234, num_graph_trials=40)
+                          seed::Int64=1234, num_graph_trials=50)
 
     isrs_map_size = (10, 10)
     total_budget = 100.
