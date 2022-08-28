@@ -144,10 +144,12 @@ function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, ma
 	gp_mcts_rewards = Vector{Float64}(undef, 0)
 
 	rmse_hist_gcb= []
+	trace_hist_gcb= []
 	total_planning_time_gcb = 0
 	total_plans_gcb = 0
 
 	rmse_hist_basic= []
+	trace_hist_basic= []
 	total_planning_time_basic = 0
 	total_plans_basic = 0
 
@@ -178,6 +180,7 @@ function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, ma
 		total_planning_time_gcb += planning_time
 		total_plans_gcb += num_plans
 		rmse_hist_gcb = vcat(rmse_hist_gcb, [calculate_rmse_along_traj(pomdp, true_map, state_hist, belief_hist, action_hist, obs_hist, total_reward_hist, reward_hist, i)])
+		trace_hist_gcb = vcat(trace_hist_gcb, [calculate_trace_Σ(pomdp, true_map, state_hist, belief_hist, action_hist, obs_hist, total_reward_hist, reward_hist, i)])
 		if plot_results
 			plot_trial(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "gcb", use_ssh_dir)
 			plot_trial_with_mean(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "gcb", use_ssh_dir)
@@ -190,6 +193,7 @@ function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, ma
 		total_planning_time_basic += planning_time
 		total_plans_basic += num_plans
 		rmse_hist_basic = vcat(rmse_hist_basic, [calculate_rmse_along_traj(pomdp, true_map, state_hist, belief_hist, action_hist, obs_hist, total_reward_hist, reward_hist, i)])
+		trace_hist_basic = vcat(trace_hist_basic, [calculate_trace_Σ(pomdp, true_map, state_hist, belief_hist, action_hist, obs_hist, total_reward_hist, reward_hist, i)])
 		if plot_results
 			plot_trial(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "basic", use_ssh_dir)
 			plot_trial_with_mean(pomdp.true_map, state_hist, belief_hist, action_hist, total_reward_hist, reward_hist, i, "basic", use_ssh_dir)
@@ -209,14 +213,20 @@ function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, ma
 	if plot_results
 		plot_RMSE_trajectory_history(rmse_hist_gcb, "gcb", use_ssh_dir)
 		plot_RMSE_trajectory_history(rmse_hist_basic, "basic", use_ssh_dir)
+		plot_trace_Σ_history(trace_hist_gcb, "gcb", use_ssh_dir)
+		plot_trace_Σ_history(trace_hist_basic, "basic", use_ssh_dir)
 	end
 
 	if use_ssh_dir
 		writedlm( "/home/jott2/figures/rmse_hist_gcb.csv",  rmse_hist_gcb, ',')
 		writedlm( "/home/jott2/figures/rmse_hist_basic.csv",  rmse_hist_basic, ',')
+		writedlm( "/home/jott2/figures/trace_hist_gcb.csv",  trace_hist_gcb, ',')
+		writedlm( "/home/jott2/figures/trace_hist_basic.csv",  trace_hist_basic, ',')
 	else
-		writedlm( "/Users/joshuaott/icra2022/figures/rmse_hist_gcb.csv",  rmse_hist_gcb, ',')
-		writedlm( "/Users/joshuaott/icra2022/figures/rmse_hist_basic.csv",  rmse_hist_basic, ',')
+		writedlm( "/Users/joshuaott/icra2022/rmse_hist_gcb.csv",  rmse_hist_gcb, ',')
+		writedlm( "/Users/joshuaott/icra2022/rmse_hist_basic.csv",  rmse_hist_basic, ',')
+		writedlm( "/Users/joshuaott/icra2022/trace_hist_gcb.csv",  trace_hist_gcb, ',')
+		writedlm( "/Users/joshuaott/icra2022/trace_hist_basic.csv",  trace_hist_basic, ',')
 	end
 
 	println("POMCP GCB average planning time: ", total_planning_time_gcb/total_plans_gcb)
@@ -229,4 +239,4 @@ function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, ma
 end
 
 
-solver_test_RoverPOMDP("test", number_of_sample_types=10, total_budget = 30.0, use_ssh_dir=false, plot_results=false)
+solver_test_RoverPOMDP("test", number_of_sample_types=10, total_budget = 100.0, use_ssh_dir=false, plot_results=false)

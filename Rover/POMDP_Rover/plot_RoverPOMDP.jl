@@ -245,7 +245,7 @@ function plot_RMSE_trajectory_history(rmse_hist, trial_name, use_ssh_dir)
 		append!(σ, sqrt(var(mn)))
 	end
 	if trial_name == "gcb"
-		plot(collect(1:min_length), μ, ribbon = σ, xlabel="Trajectory Step", ylabel="RMSE",title="RMSE", legend=true, label="POMCP GCB", color = RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073))
+		plot(collect(1:min_length), μ, ribbon = σ, xlabel="Trajectory Step", ylabel="RMSE",title="RMSE", legend=true, label="POMCP-GCB", color = RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073))
 	else
 		plot(collect(1:min_length), μ, ribbon = σ, xlabel="Trajectory Step", ylabel="RMSE",title="RMSE", legend=true, label="POMCP", color = RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073))
 	end
@@ -256,4 +256,75 @@ function plot_RMSE_trajectory_history(rmse_hist, trial_name, use_ssh_dir)
 		savefig("/Users/joshuaott/icra2022/figures/RMSE_traj_$(trial_name).pdf")
 	end
 
+end
+
+
+
+
+
+function calculate_trace_Σ(pomdp, true_map, state_hist, belief_hist, action_hist, obs_hist, total_reward_hist, reward_hist, trial_num)
+	k = with_lengthscale(SqExponentialKernel(), 1.0) # NOTE: check length scale
+	m(x) = 0.0 # default to 0.5 in the middle of the sample spectrum
+	plot_scale = 1:0.1:10
+    X_plot = [[i,j] for i = plot_scale, j = plot_scale]
+    plot_size = size(X_plot)
+    X_plot = reshape(X_plot, size(X_plot)[1]*size(X_plot)[2])
+    KXqXq = K(X_plot, X_plot, k)
+	f_prior = GaussianProcess(m, μ(X_plot, m), k, [], X_plot, [], [], [], [], KXqXq);
+	gp = f_prior
+
+    trace_hist = []
+
+	for i = 1:length(state_hist)
+		b = belief_hist[i]
+
+        if i == 1
+            gp = f_prior
+            ν = query_no_data(gp)[2]
+			trace_Σ = sum(ν)
+        else
+			if action_hist[i-1] == :drill
+		        drill_pos = convert_pos_idx_2_pos_coord(pomdp, state_hist[i])
+		        σ²_n = 1e-9 #^2 dont square this causes singular exception in GP update
+		        gp = posterior(gp, [[drill_pos[1], drill_pos[2]]], [obs_hist[i-1]], [σ²_n])
+		    else
+		        spec_pos = convert_pos_idx_2_pos_coord(pomdp, state_hist[i])
+		        σ²_n = 0.1
+		        gp = posterior(gp, [[spec_pos[1], spec_pos[2]]], [obs_hist[i-1]], [σ²_n])
+		    end
+
+            ν = query_no_data(gp)[2]
+			trace_Σ = sum(ν)
+        end
+
+		append!(trace_hist, trace_Σ)
+	end
+
+	return trace_hist
+end
+
+
+function plot_trace_Σ_history(trace_hist, trial_name, use_ssh_dir)
+	min_length = minimum([length(trace_hist[i]) for i in 1:length(trace_hist)])
+	μ = []
+	σ = []
+	for i in 1:min_length
+		mn = []
+    	for j in 1:length(trace_hist)
+			append!(mn, trace_hist[j][i])
+		end
+		append!(μ, mean(mn))
+		append!(σ, sqrt(var(mn)))
+	end
+	if trial_name == "gcb"
+		plot(collect(1:min_length), μ, ribbon = σ, xlabel="Trajectory Step", ylabel="Tr(Σ)",title="Tr(Σ)", legend=true, label="POMCP-GCB", color = RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073))
+	else
+		plot(collect(1:min_length), μ, ribbon = σ, xlabel="Trajectory Step", ylabel="Tr(Σ)",title="Tr(Σ)", legend=true, label="POMCP", color = RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073))
+	end
+
+	if use_ssh_dir
+		savefig("/home/jott2/icra2022/figures/trace_traj_$(trial_name).pdf")
+	else
+		savefig("/Users/joshuaott/icra2022/figures/trace_traj_$(trial_name).pdf")
+	end
 end

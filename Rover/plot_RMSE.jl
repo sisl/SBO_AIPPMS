@@ -5,11 +5,14 @@ using StatsBase
 
 theme(:dao)
 
-rmse_hist_gcb = readdlm("/Users/joshuaott/icra2022/figures/rmse_hist_gcb.csv", ',')
-rmse_hist_basic = readdlm("/Users/joshuaott/icra2022/figures/rmse_hist_basic.csv", ',')
-rmse_hist_raster = readdlm("/Users/joshuaott/icra2022/figures/rmse_hist_raster.csv", ',')
-rmse_hist_gp_mcts = readdlm("/Users/joshuaott/icra2022/figures/rmse_hist_gp_mcts.csv", ',')
-
+# rmse_hist_gcb = readdlm("/Users/joshuaott/icra2022/figures/rmse_hist_gcb.csv", ',')
+# rmse_hist_basic = readdlm("/Users/joshuaott/icra2022/figures/rmse_hist_basic.csv", ',')
+# rmse_hist_raster = readdlm("/Users/joshuaott/icra2022/figures/rmse_hist_raster.csv", ',')
+# rmse_hist_gp_mcts = readdlm("/Users/joshuaott/icra2022/figures/rmse_hist_gp_mcts.csv", ',')
+rmse_hist_gcb = readdlm("/Users/joshuaott/icra2022/ssh/Rover/budget_100/rmse_hist_gcb.csv", ',')
+rmse_hist_basic = readdlm("/Users/joshuaott/icra2022/ssh/Rover/budget_100/rmse_hist_basic.csv", ',')
+rmse_hist_raster = readdlm("/Users/joshuaott/icra2022/ssh/Rover/budget_100/rmse_hist_raster.csv", ',')
+rmse_hist_gp_mcts = readdlm("/Users/joshuaott/icra2022/ssh/Rover/budget_100/rmse_hist_gp_mcts.csv", ',')
 
 
 rmse_hist_gcb_corrected = []
@@ -70,7 +73,7 @@ function plot_RMSE_trajectory_history_together(rmse_hist, trial_name, use_ssh_di
 		append!(μ, mean(mn))
 		append!(σ, sqrt(var(mn)))
 	end
-	plot!(collect(1:min_length), μ, ribbon = σ, xlabel="Trajectory Step", ylabel="RMSE",title="RMSE", legend=true, label=trial_name, color=color,fillalpha=0.2, xlim=(1,min_length), ylim=(0.2,0.5))
+	plot!(collect(1:min_length), μ, ribbon = σ, xlabel="Trajectory Step", ylabel="RMSE",title="RMSE", legend=true, label=trial_name, color=color,fillalpha=0.2, size=(400,400), xlim=(1,min_length), ylim=(0.23,0.5))
 end
 
 
@@ -79,7 +82,7 @@ end
 use_ssh_dir = false
 # trial_names = ["Raster", "GPMCTS-DPW", "POMCP", "POMCP GCB"]
 # trial_names = ["POMCP GCB", "POMCP", "Raster", "GPMCTS-DPW"]
-trial_names = ["GPMCTS-DPW", "POMCP", "POMCP GCB", "Raster"]
+trial_names = ["MCTS-DPW", "POMCP", "POMCP GCB", "Raster"]
 
 hists = [rmse_hist_gp_mcts_corrected, rmse_hist_basic_corrected, rmse_hist_gcb_corrected, rmse_hist_raster_corrected]
 # hists = [rmse_hist_raster_corrected, rmse_hist_gp_mcts_corrected, rmse_hist_basic_corrected, rmse_hist_gcb_corrected]
@@ -101,5 +104,5 @@ end
 if use_ssh_dir
 	savefig("/home/jott2/icra2022/figures/RMSE_traj_together.pdf")
 else
-	savefig("/Users/joshuaott/icra2022/figures/RMSE_traj_together.pdf")
+	savefig("/Users/joshuaott/icra2022/ssh/Rover/budget_100/RMSE_traj_together.pdf")
 end

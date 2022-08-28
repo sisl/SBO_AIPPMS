@@ -378,15 +378,103 @@ function plot_RMSE_trajectory_history(rmse_hist, trial_name, use_ssh_dir)
 		append!(σ, sqrt(var(mn)))
 	end
 	if trial_name == "gp_mcts_dpw"
-		plot(collect(1:min_length), μ, ribbon = σ, xlabel="Trajectory Step", ylabel="RMSE",title="RMSE", legend=true, label="GPMCTS-DPW", color = RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073))
+		plot(collect(1:min_length), μ, ribbon = σ, xlabel="Trajectory Step", ylabel="RMSE",title="RMSE", legend=true, label="MCTS-DPW", color = RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073))
 	else
 		plot(collect(1:min_length), μ, ribbon = σ, xlabel="Trajectory Step", ylabel="RMSE",title="RMSE", legend=true, label="Raster", color = RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073))
 	end
-	
+
 	if use_ssh_dir
 		savefig("/home/jott2/icra2022/figures/RMSE_traj_$(trial_name).pdf")
 	else
 		savefig("/Users/joshuaott/icra2022/figures/RMSE_traj_$(trial_name).pdf")
+	end
+
+end
+
+
+
+function calculate_trace_Σ(true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, trial_num)
+	k = with_lengthscale(SqExponentialKernel(), 1.0) # NOTE: check length scale
+	plot_scale = 1:0.1:10
+    X_plot = [[i,j] for i = plot_scale, j = plot_scale]
+    plot_size = size(X_plot)
+    X_plot = reshape(X_plot, size(X_plot)[1]*size(X_plot)[2])
+    KXqXq = K(X_plot, X_plot, k)
+
+    trace_hist = []
+
+	for i = 1:length(state_hist)
+		if gp_hist[i].X == []
+			gp = GaussianProcess(gp_hist[i].m, μ(X_plot, gp_hist[i].m), k, [], X_plot, [], [], [], [], KXqXq);
+			ν = query_no_data(gp)[2]
+			trace_Σ = sum(ν)
+		else
+			gp = GaussianProcess(gp_hist[i].m, μ(X_plot, gp_hist[i].m), k, gp_hist[i].X, X_plot, gp_hist[i].y, gp_hist[i].ν, gp_hist[i].KXX, K(X_plot, gp_hist[i].X, k), KXqXq);
+			ν = query(gp)[2]
+			trace_Σ = sum(ν)
+		end
+		append!(trace_hist, trace_Σ)
+	end
+
+	return trace_hist
+end
+
+
+
+function plot_trace_trajectory(true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, trial_num, trial_name, use_ssh_dir)
+	k = with_lengthscale(SqExponentialKernel(), 1.0) # NOTE: check length scale
+    plot_scale = 1:0.1:10
+    X_plot = [[i,j] for i = plot_scale, j = plot_scale]
+    plot_size = size(X_plot)
+    X_plot = reshape(X_plot, size(X_plot)[1]*size(X_plot)[2])
+    KXqXq = K(X_plot, X_plot, k)
+
+	trace_hist = []
+	
+    anim = @animate for i = 1:length(state_hist)
+		if gp_hist[i].X == []
+			gp = GaussianProcess(gp_hist[i].m, μ(X_plot, gp_hist[i].m), k, [], X_plot, [], [], [], [], KXqXq);
+			ν = query_no_data(gp)[2]
+			trace_Σ = sum(ν)
+		else
+			gp = GaussianProcess(gp_hist[i].m, μ(X_plot, gp_hist[i].m), k, gp_hist[i].X, X_plot, gp_hist[i].y, gp_hist[i].ν, gp_hist[i].KXX, K(X_plot, gp_hist[i].X, k), KXqXq);
+			ν = query(gp)[2]
+			trace_Σ = sum(ν)
+		end
+		append!(trace_hist, trace_Σ)
+
+		plot(collect(1:i), trace_hist, color=RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073), legend=false, xlabel="Trajectory Step", ylabel="Tr(Σ)", title="Tr(Σ)")
+    end
+	if use_ssh_dir
+		Plots.gif(anim, "/home/jott2/figures/GP_BMDP_Rover/$(trial_name)/trace_traj/trace_traj$(trial_num).gif", fps = 2)
+	else
+		Plots.gif(anim, "/Users/joshuaott/icra2022/figures/GP_BMDP_Rover/$(trial_name)/trace_traj/trace_traj$(trial_num).gif", fps = 2)
+	end
+end
+
+
+function plot_trace_Σ_history(trace_hist, trial_name, use_ssh_dir)
+	min_length = minimum([length(trace_hist[i]) for i in 1:length(trace_hist)])
+	μ = []
+	σ = []
+	for i in 1:min_length
+		mn = []
+    	for j in 1:length(trace_hist)
+			append!(mn, trace_hist[j][i])
+		end
+		append!(μ, mean(mn))
+		append!(σ, sqrt(var(mn)))
+	end
+	if trial_name == "gp_mcts_dpw"
+		plot(collect(1:min_length), μ, ribbon = σ, xlabel="Trajectory Step", ylabel="Tr(Σ)",title="Tr(Σ)", legend=true, label="MCTS-DPW", color = RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073))
+	else
+		plot(collect(1:min_length), μ, ribbon = σ, xlabel="Trajectory Step", ylabel="Tr(Σ)",title="Tr(Σ)", legend=true, label="Raster", color = RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073))
+	end
+
+	if use_ssh_dir
+		savefig("/home/jott2/icra2022/figures/trace_traj_$(trial_name).pdf")
+	else
+		savefig("/Users/joshuaott/icra2022/figures/trace_traj_$(trial_name).pdf")
 	end
 
 end

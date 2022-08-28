@@ -145,7 +145,7 @@ end
 
 
 
-function get_pomcp_gcb_policy(pomdp, rng,  max_depth=20, queries = 100, lambda=0.00001)
+function get_pomcp_gcb_policy(pomdp, rng,  max_depth=20, queries = 100, lambda=0.5)#0.00001)
     rollout_policy = MultimodalIPPGreedyPolicy(pomdp, lambda, rng)
     value_estimate = PORollout(rollout_policy, RoverBeliefUpdater(pomdp))
     solver = POMCPSolver(rng=rng, estimate_value=value_estimate, max_depth=max_depth, tree_queries = queries)
