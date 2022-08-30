@@ -276,7 +276,6 @@ function calculate_trace_Σ(pomdp, true_map, state_hist, belief_hist, action_his
     trace_hist = []
 
 	for i = 1:length(state_hist)
-		b = belief_hist[i]
 
         if i == 1
             gp = f_prior
@@ -293,7 +292,7 @@ function calculate_trace_Σ(pomdp, true_map, state_hist, belief_hist, action_his
 		        gp = posterior(gp, [[spec_pos[1], spec_pos[2]]], [obs_hist[i-1]], [σ²_n])
 		    end
 
-            ν = query_no_data(gp)[2]
+            ν = query(gp)[2]
 			trace_Σ = sum(ν)
         end
 

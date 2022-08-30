@@ -223,10 +223,10 @@ function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, ma
 		writedlm( "/home/jott2/figures/trace_hist_gcb.csv",  trace_hist_gcb, ',')
 		writedlm( "/home/jott2/figures/trace_hist_basic.csv",  trace_hist_basic, ',')
 	else
-		writedlm( "/Users/joshuaott/icra2022/rmse_hist_gcb.csv",  rmse_hist_gcb, ',')
-		writedlm( "/Users/joshuaott/icra2022/rmse_hist_basic.csv",  rmse_hist_basic, ',')
-		writedlm( "/Users/joshuaott/icra2022/trace_hist_gcb.csv",  trace_hist_gcb, ',')
-		writedlm( "/Users/joshuaott/icra2022/trace_hist_basic.csv",  trace_hist_basic, ',')
+		# writedlm( "/Users/joshuaott/icra2022/rmse_hist_gcb.csv",  rmse_hist_gcb, ',')
+		# writedlm( "/Users/joshuaott/icra2022/rmse_hist_basic.csv",  rmse_hist_basic, ',')
+		# writedlm( "/Users/joshuaott/icra2022/trace_hist_gcb.csv",  trace_hist_gcb, ',')
+		# writedlm( "/Users/joshuaott/icra2022/trace_hist_basic.csv",  trace_hist_basic, ',')
 	end
 
 	println("POMCP GCB average planning time: ", total_planning_time_gcb/total_plans_gcb)
@@ -239,4 +239,4 @@ function solver_test_RoverPOMDP(pref::String; number_of_sample_types::Int=10, ma
 end
 
 
-solver_test_RoverPOMDP("test", number_of_sample_types=10, total_budget = 100.0, use_ssh_dir=false, plot_results=false)
+solver_test_RoverPOMDP("test", number_of_sample_types=10, total_budget = 60.0, use_ssh_dir=false, plot_results=false)

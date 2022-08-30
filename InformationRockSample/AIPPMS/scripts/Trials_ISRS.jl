@@ -94,7 +94,7 @@ function plot_trial(state_hist, location_states_hist, action_hist, reward_hist, 
 end
 
 function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=10, num_beacons::Int64=25,
-                          seed::Int64=1234, num_graph_trials=40)
+                          seed::Int64=1234, num_graph_trials=50)
 
     isrs_map_size = (10, 10)
     total_budget = 100.
@@ -225,28 +225,28 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
 
         push!(pomcp_gcb_rewards, pomcp_gcb_reward)
         push!(pomcp_basic_rewards, pomcp_basic_reward)
-		push!(pomcpow_rewards, pomcpow_reward)
+		# push!(pomcpow_rewards, pomcpow_reward)
 
     end
 
 	println("POMCP GCB average planning time: ", total_planning_time_gcb/total_plans_gcb)
 	println("POMCP Basic average planning time: ", total_planning_time_basic/total_plans_basic)
-	println("POMCPOW average planning time: ", total_planning_time_pomcpow/total_plans_pomcpow)
+	# println("POMCPOW average planning time: ", total_planning_time_pomcpow/total_plans_pomcpow)
 
 
     @show mean(pomcp_gcb_rewards)
     @show mean(pomcp_basic_rewards)
-	@show mean(pomcpow_rewards)
+	# @show mean(pomcpow_rewards)
 
-    outfile_pomcp_gcb = string("isrs-pomcp-gcb-",pref,".json")
-    open(outfile_pomcp_gcb,"w") do f
-        JSON.print(f,Dict("rewards"=>pomcp_gcb_rewards),2)
-    end
+    # outfile_pomcp_gcb = string("isrs-pomcp-gcb-",pref,".json")
+    # open(outfile_pomcp_gcb,"w") do f
+    #     JSON.print(f,Dict("rewards"=>pomcp_gcb_rewards),2)
+    # end
 
-    outfile_pomcp_basic = string("isrs-pomcp-basic-",pref,".json")
-    open(outfile_pomcp_basic,"w") do f
-        JSON.print(f,Dict("rewards"=>pomcp_basic_rewards),2)
-    end
+    # outfile_pomcp_basic = string("isrs-pomcp-basic-",pref,".json")
+    # open(outfile_pomcp_basic,"w") do f
+    #     JSON.print(f,Dict("rewards"=>pomcp_basic_rewards),2)
+    # end
 end
 
 

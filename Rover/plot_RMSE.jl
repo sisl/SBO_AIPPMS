@@ -14,7 +14,6 @@ rmse_hist_basic = readdlm("/Users/joshuaott/icra2022/ssh/Rover/budget_100/rmse_h
 rmse_hist_raster = readdlm("/Users/joshuaott/icra2022/ssh/Rover/budget_100/rmse_hist_raster.csv", ',')
 rmse_hist_gp_mcts = readdlm("/Users/joshuaott/icra2022/ssh/Rover/budget_100/rmse_hist_gp_mcts.csv", ',')
 
-
 rmse_hist_gcb_corrected = []
 for i in 1:size(rmse_hist_gcb)[1]
 	tmp_hist = []
@@ -82,7 +81,7 @@ end
 use_ssh_dir = false
 # trial_names = ["Raster", "GPMCTS-DPW", "POMCP", "POMCP GCB"]
 # trial_names = ["POMCP GCB", "POMCP", "Raster", "GPMCTS-DPW"]
-trial_names = ["MCTS-DPW", "POMCP", "POMCP GCB", "Raster"]
+trial_names = ["MCTS-DPW", "POMCP", "POMCP-GCB", "Raster"]
 
 hists = [rmse_hist_gp_mcts_corrected, rmse_hist_basic_corrected, rmse_hist_gcb_corrected, rmse_hist_raster_corrected]
 # hists = [rmse_hist_raster_corrected, rmse_hist_gp_mcts_corrected, rmse_hist_basic_corrected, rmse_hist_gcb_corrected]

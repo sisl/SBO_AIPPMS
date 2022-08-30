@@ -281,7 +281,7 @@ function solver_test_RoverBMDP(pref::String; number_of_sample_types::Int=10, map
 				# plot_true_map(pomdp.true_map,i, "raster", use_ssh_dir)
 				# plot_error_map(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i, "raster", use_ssh_dir)
 				# plot_RMSE_trajectory(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i, "raster", use_ssh_dir)
-				plot_trace_trajectory(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i, "gp_mcts_dpw", use_ssh_dir)
+				plot_trace_trajectory(pomdp.true_map, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i, "raster", use_ssh_dir)
 			end
 			@show raster_reward
 			push!(raster_rewards, raster_reward)

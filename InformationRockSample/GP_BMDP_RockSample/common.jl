@@ -102,7 +102,7 @@ function belief_reward(pomdp::P, b::B, a::MultimodalIPPAction, bp::B) where {P <
                 ν_posterior = query(bp.gp)[2]
             end
 
-            r += 0.7*(sum(ν_init) - sum(ν_posterior))
+            r += 0.9*(sum(ν_init) - sum(ν_posterior))
             #return marginal_utility(pomdp.env, sp.current, s.visited, s.location_states) + 0.3*(sum(ν_init) - sum(ν_posterior))
         end
     end
