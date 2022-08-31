@@ -242,7 +242,9 @@ function graph_trial(rng::RNG, pomdp::POMDPs.POMDP, policy, isterminal::Function
     state_hist = [deepcopy(state.current)]
     location_states_hist = [deepcopy(state.location_states)]
     action_hist = []
+    obs_hist = []
     reward_hist = []
+    total_reward_hist = []
     total_planning_time = 0
 
     total_reward = 0.0
@@ -268,14 +270,16 @@ function graph_trial(rng::RNG, pomdp::POMDPs.POMDP, policy, isterminal::Function
         state_hist = vcat(state_hist, deepcopy(state.current))
         location_states_hist = vcat(location_states_hist, deepcopy(state.location_states))
         action_hist = vcat(action_hist, deepcopy(a))
-        reward_hist = vcat(reward_hist, deepcopy(total_reward))
+        obs_hist = vcat(obs_hist, deepcopy(obs))
+        reward_hist = vcat(reward_hist, deepcopy(loc_reward))
+		total_reward_hist = vcat(total_reward_hist, deepcopy(total_reward))
     end
 
-    return total_reward, state_hist, location_states_hist, action_hist, reward_hist, total_planning_time, length(reward_hist)
+    return total_reward, state_hist, location_states_hist, action_hist, obs_hist, reward_hist, total_reward_hist, total_planning_time, length(reward_hist)
 end
 
-function get_pomcp_gcb_policy(env, pomdp, budget, rng,  max_depth=20, queries = 100, lambda=0.00001)
-# function get_pomcp_gcb_policy(env, pomdp, budget, rng,  max_depth=20, queries = 100, lambda=0.1)
+# function get_pomcp_gcb_policy(env, pomdp, budget, rng,  max_depth=20, queries = 100, lambda=0.00001)
+function get_pomcp_gcb_policy(env, pomdp, budget, rng,  max_depth=20, queries = 100, lambda=1.0)
 
     rollout_policy = MultimodalIPPGreedyPolicy(pomdp, lambda, rng)
     value_estimate = PORollout(rollout_policy, MultimodalIPPBeliefUpdater(pomdp))

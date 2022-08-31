@@ -8,6 +8,7 @@ using Distributions
 using KernelFunctions
 using Plots
 using MCTS
+using DelimitedFiles
 include("CustomGP.jl")
 include("MultimodalIPP.jl")
 include("belief_mdp.jl")
@@ -105,7 +106,7 @@ end
 
 
 function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=10, num_beacons::Int64=25,
-                          seed::Int64=1234, num_graph_trials=50, total_budget = 100.0, use_ssh_dir=false, plot_results=false)
+                          seed::Int64=1234, num_graph_trials=50, total_budget = 100.0, use_ssh_dir=false, plot_results=false, log_trace_rmse=false)
 
     isrs_map_size = (10, 10)
     pos_dist = 1:10
@@ -194,8 +195,10 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
 		gp_mcts_reward, state_hist, location_states_hist, gp_hist, action_hist, reward_hist, total_reward_hist, planning_time, num_plans = run_rock_sample_bmdp(rng, bmdp, gp_bmdp_policy, gp_bmdp_isterminal)
 		total_planning_time += planning_time
 		total_plans += num_plans
-		rmse_hist_gp_mcts = vcat(rmse_hist_gp_mcts, [calculate_rmse_along_traj(pomdp, location_states_hist, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist)])
-		trace_hist_gp_mcts = vcat(trace_hist_gp_mcts, [calculate_trace_Σ(pomdp, location_states_hist, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)])
+		if log_trace_rmse
+			rmse_hist_gp_mcts = vcat(rmse_hist_gp_mcts, [calculate_rmse_along_traj(pomdp, location_states_hist, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist)])
+			trace_hist_gp_mcts = vcat(trace_hist_gp_mcts, [calculate_trace_Σ(pomdp, location_states_hist, state_hist, gp_hist, action_hist, total_reward_hist, reward_hist, i)])
+		end
 		if plot_results
         	plot_trial(state_hist, location_states_hist, gp_hist, action_hist,total_reward_hist, reward_hist,i, "gp_mcts_dpw",use_ssh_dir)
 			plot_trial_with_mean(state_hist, location_states_hist, gp_hist, action_hist,total_reward_hist, reward_hist,i, "gp_mcts_dpw",use_ssh_dir)
@@ -213,14 +216,16 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
 	println("average planning time: ", total_planning_time/total_plans)
     @show mean(gp_mcts_rewards)
 
-	if use_ssh_dir
-		writedlm( "/home/jott2/figures/rmse_hist_gp_mcts_ISRS.csv",  rmse_hist_gp_mcts, ',')
-		writedlm( "/home/jott2/figures/trace_hist_gp_mcts_ISRS.csv",  trace_hist_gp_mcts, ',')
-	else
-		writedlm( "/Users/joshuaott/icra2022/rmse_hist_gp_mcts_ISRS.csv",  rmse_hist_gp_mcts, ',')
-		writedlm( "/Users/joshuaott/icra2022//trace_hist_gp_mcts_ISRS.csv",  trace_hist_gp_mcts, ',')
+	if log_trace_rmse
+		if use_ssh_dir
+			writedlm( "/home/jott2/figures/rmse_hist_gp_mcts_ISRS.csv",  rmse_hist_gp_mcts, ',')
+			writedlm( "/home/jott2/figures/trace_hist_gp_mcts_ISRS.csv",  trace_hist_gp_mcts, ',')
+		else
+			writedlm( "/Users/joshuaott/icra2022/rmse_hist_gp_mcts_ISRS.csv",  rmse_hist_gp_mcts, ',')
+			writedlm( "/Users/joshuaott/icra2022//trace_hist_gp_mcts_ISRS.csv",  trace_hist_gp_mcts, ',')
+		end
 	end
 
 end
 
-solver_test_isrs("test", good_prob=0.5, total_budget = 100.0, use_ssh_dir=false, plot_results=false)
+solver_test_isrs("test", good_prob=0.5, total_budget = 100.0, use_ssh_dir=true, plot_results=true, log_trace_rmse=true)

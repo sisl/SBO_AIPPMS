@@ -8,102 +8,29 @@ using JSON
 using Statistics
 using Distributions
 using Plots
+using DelimitedFiles
+using KernelFunctions
+include("CustomGP.jl")
+include("plot_ISRS.jl")
 
 
-function plot_trial(state_hist, location_states_hist, action_hist, reward_hist, trial_num, name)
-
-
-	loc_states = deepcopy(location_states_hist[1])
-	plot_scale = 1:0.18:10
-
-
-    anim = @animate for i = 1:length(state_hist)
-
-		good_rocks = findall(x-> x == RSGOOD, loc_states)
-		good_rocks = [CartesianIndices((10,10))[good_rocks[i]].I for i in 1:length(good_rocks)]
-
-		bad_rocks = findall(x-> x == RSBAD, loc_states)
-		bad_rocks = [CartesianIndices((10,10))[bad_rocks[i]].I for i in 1:length(bad_rocks)]
-
-		beacons = findall(x-> x == RSBEACON, loc_states)
-		beacons = [CartesianIndices((10,10))[beacons[i]].I for i in 1:length(beacons)]
-
-
-		# Display Total Reward
-		if i == 1
-			title = "Total Reward: $(reward_hist[1])"
-		else
-			title = "Total Reward: $(reward_hist[i-1])"
-		end
-
-		contourf(collect(plot_scale), collect(plot_scale), ones(length(plot_scale),length(plot_scale)), colorbar = true, c = cgrad(:Blues_3, rev = true), xlims = (0.5, 10.5), ylims = (0.5, 10.5), legend = false, aspectratio = :equal, clim=(0,1), grid=false) # xlims = (1, 10), ylims = (1, 10)
-
-	    # Beacons
-		scatter!([beacons[i][1] for i in 1:length(beacons)], [beacons[i][2] for i in 1:length(beacons)], legend=false, color=:grey, markershape=:rect, aspectratio = :equal, xlims = (0.5, 10.5), ylims = (0.5, 10.5))
-
-		# Rocks
-		scatter!([good_rocks[i][1] for i in 1:length(good_rocks)], [good_rocks[i][2] for i in 1:length(good_rocks)], legend=false, color=:green)
-		scatter!([bad_rocks[i][1] for i in 1:length(bad_rocks)], [bad_rocks[i][2] for i in 1:length(bad_rocks)], legend=false, color=:red)
-
-		# Agent location
-		scatter!([CartesianIndices((10,10))[state_hist[i]].I[1]],[CartesianIndices((10,10))[state_hist[i]].I[2]],legend=false, color=:orchid1, title=title)
-
-		# Update rock visit
-		if loc_states[state_hist[i]] == RSGOOD
-			# println(loc_states[state_hist[i]])
-			loc_states[state_hist[i]] = RSBAD
-			# println(loc_states[state_hist[i]])
-		end
-		# println(location_states_hist)
-	end
-	Plots.gif(anim, "/Users/joshuaott/icra2022/figures/AIPPMS/$(name)$(trial_num).gif", fps = 1)
-
-	############################################################################
-	# Just make the plot
-	############################################################################
-	loc_states = deepcopy(location_states_hist[1])
-
-
-	good_rocks = findall(x-> x == RSGOOD, loc_states)
-	good_rocks = [CartesianIndices((10,10))[good_rocks[i]].I for i in 1:length(good_rocks)]
-
-	bad_rocks = findall(x-> x == RSBAD, loc_states)
-	bad_rocks = [CartesianIndices((10,10))[bad_rocks[i]].I for i in 1:length(bad_rocks)]
-
-	beacons = findall(x-> x == RSBEACON, loc_states)
-	beacons = [CartesianIndices((10,10))[beacons[i]].I for i in 1:length(beacons)]
-
-
-	# Display Total Reward
-	title = "Total Reward: $(reward_hist[end-1])"
-
-	contourf(collect(plot_scale), collect(plot_scale), ones(length(plot_scale),length(plot_scale)), colorbar = true, c = cgrad(:Blues_3, rev = true), xlims = (0.5, 10.5), ylims = (0.5, 10.5), legend = false, aspectratio = :equal, clim=(0,1), grid=false) # xlims = (1, 10), ylims = (1, 10)
-
-
-	# Beacons
-	scatter!([beacons[i][1] for i in 1:length(beacons)], [beacons[i][2] for i in 1:length(beacons)], legend=false, color=:grey, markershape=:rect, aspectratio = :equal, xlims = (0.5, 10.5), ylims = (0.5, 10.5))
-
-	# Rocks
-	scatter!([good_rocks[i][1] for i in 1:length(good_rocks)], [good_rocks[i][2] for i in 1:length(good_rocks)], legend=false, color=:green)
-	scatter!([bad_rocks[i][1] for i in 1:length(bad_rocks)], [bad_rocks[i][2] for i in 1:length(bad_rocks)], legend=false, color=:red)
-
-	# Agent location
-	plot!([CartesianIndices((10,10))[state_hist[i]].I[1] for i in 1:length(state_hist)],[CartesianIndices((10,10))[state_hist[i]].I[2] for i in 1:length(state_hist)],legend=false, color=:orchid1, linestyle=:dashdotdot, linewidth=2)
-	savefig("/Users/joshuaott/icra2022/figures/AIPPMS/$(name)$(trial_num).pdf")
-
-end
 
 function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=10, num_beacons::Int64=25,
-                          seed::Int64=1234, num_graph_trials=50)
+                          seed::Int64=1234, num_graph_trials=50, total_budget = 100.0, use_ssh_dir=false, plot_results=false, log_trace_rmse = false)
 
     isrs_map_size = (10, 10)
-    total_budget = 100.
 
     pos_dist = 1:10
 
     pomcp_gcb_rewards = Vector{Float64}(undef, 0)
     pomcp_basic_rewards = Vector{Float64}(undef, 0)
 	pomcpow_rewards = Vector{Float64}(undef, 0)
+
+	rmse_hist_gcb = []
+	trace_hist_gcb = []
+	rmse_hist_basic = []
+	trace_hist_basic = []
+
 
 	total_planning_time_gcb = 0
 	total_plans_gcb = 0
@@ -174,25 +101,31 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
 		pomcpow_reward = 0.0
 
 		try
-			pomcp_gcb_reward, state_hist, location_states_hist, action_hist, reward_hist, planning_time, num_plans = graph_trial(rng, pomdp, pomcp_gcb_policy, pomcp_isterminal)
+			pomcp_gcb_reward, state_hist, location_states_hist, action_hist, obs_hist, reward_hist, total_reward_hist, planning_time, num_plans = graph_trial(rng, pomdp, pomcp_gcb_policy, pomcp_isterminal)
 			total_planning_time_gcb += planning_time
 			total_plans_gcb += num_plans
-			# plot_trial(state_hist, location_states_hist, action_hist, reward_hist, i, "gcb")
+			if log_trace_rmse
+				rmse_hist_gcb = vcat(rmse_hist_gcb, [calculate_rmse_along_traj(pomdp, location_states_hist, state_hist, action_hist, obs_hist, total_reward_hist, reward_hist, i)])
+				trace_hist_gcb = vcat(trace_hist_gcb, [calculate_trace_Σ(pomdp, location_states_hist, state_hist, action_hist, obs_hist, total_reward_hist, reward_hist, i)])		
+			end
+			if plot_results
+				plot_trial(state_hist, location_states_hist, action_hist, reward_hist, i, "gcb")
+			end
 			@show pomcp_gcb_reward
 
 
-			pomcp_basic_reward, state_hist, location_states_hist, action_hist, reward_hist = graph_trial(rng, pomdp, pomcp_basic_policy, pomcp_isterminal)
+			pomcp_basic_reward, state_hist, location_states_hist, action_hist, obs_hist, reward_hist, total_reward_hist, planning_time, num_plans = graph_trial(rng, pomdp, pomcp_basic_policy, pomcp_isterminal)
 			total_planning_time_basic += planning_time
 			total_plans_basic += num_plans
-			# plot_trial(state_hist, location_states_hist, action_hist, reward_hist, i, "basic")
+			if log_trace_rmse 
+				rmse_hist_basic = vcat(rmse_hist_basic, [calculate_rmse_along_traj(pomdp, location_states_hist, state_hist, action_hist, obs_hist, total_reward_hist, reward_hist, i)])
+				trace_hist_basic = vcat(trace_hist_basic, [calculate_trace_Σ(pomdp, location_states_hist, state_hist, action_hist, obs_hist, total_reward_hist, reward_hist, i)])		
+			end
+			if plot_results
+				plot_trial(state_hist, location_states_hist, action_hist, reward_hist, i, "basic")
+			end
 			@show pomcp_basic_reward
-
-			# pomcpow_reward, state_hist, location_states_hist, action_hist, reward_hist = graph_trial(rng, pomdp, pomcpow_policy, pomcp_isterminal)
-			# total_planning_time_pomcpow += planning_time
-			# total_plans_pomcpow += num_plans
-			# # plot_trial(state_hist, location_states_hist, action_hist, reward_hist, i, "pomcpow")
-			# @show pomcpow_reward
-
+		
 		catch y
 			if isa(y, InterruptException)
                 throw(InterruptException)
@@ -203,22 +136,13 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
             continue
 		end
 
+		# pomcpow_reward, state_hist, location_states_hist, action_hist, reward_hist = graph_trial(rng, pomdp, pomcpow_policy, pomcp_isterminal)
+		# total_planning_time_pomcpow += planning_time
+		# total_plans_pomcpow += num_plans
+		# # plot_trial(state_hist, location_states_hist, action_hist, reward_hist, i, "pomcpow")
+		# @show pomcpow_reward
 
-        # try
-        #     pomcp_gcb_reward = graph_trial(rng, pomdp, pomcp_gcb_policy, pomcp_isterminal)
-        #     @show pomcp_gcb_reward
-		#
-        #     pomcp_basic_reward = graph_trial(rng, pomdp, pomcp_basic_policy, pomcp_isterminal)
-        #     @show pomcp_basic_reward
-        # catch y
-        #     if isa(y, InterruptException)
-        #         throw(InterruptException)
-        #     end
-        #     pomcp_gcb_reward = 0.0
-        #     pomcp_basic_reward = 0.0
-        #     i = i+1
-        #     continue
-        # end
+
 
         i = i+1
         idx = idx+1
@@ -236,18 +160,21 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
 
     @show mean(pomcp_gcb_rewards)
     @show mean(pomcp_basic_rewards)
-	# @show mean(pomcpow_rewards)
 
-    # outfile_pomcp_gcb = string("isrs-pomcp-gcb-",pref,".json")
-    # open(outfile_pomcp_gcb,"w") do f
-    #     JSON.print(f,Dict("rewards"=>pomcp_gcb_rewards),2)
-    # end
-
-    # outfile_pomcp_basic = string("isrs-pomcp-basic-",pref,".json")
-    # open(outfile_pomcp_basic,"w") do f
-    #     JSON.print(f,Dict("rewards"=>pomcp_basic_rewards),2)
-    # end
+	if log_trace_rmse
+		if use_ssh_dir
+			writedlm( "/home/jott2/figures/rmse_hist_gcb_ISRS.csv",  rmse_hist_gcb, ',')
+			writedlm( "/home/jott2/figures/rmse_hist_basic_ISRS.csv",  rmse_hist_basic, ',')
+			writedlm( "/home/jott2/figures/trace_hist_gcb_ISRS.csv",  trace_hist_gcb, ',')
+			writedlm( "/home/jott2/figures/trace_hist_basic_ISRS.csv",  trace_hist_basic, ',')
+		else
+			writedlm( "/Users/joshuaott/icra2022/rmse_hist_gcb_ISRS.csv",  rmse_hist_gcb, ',')
+			writedlm( "/Users/joshuaott/icra2022/rmse_hist_basic_ISRS.csv",  rmse_hist_basic, ',')
+			writedlm( "/Users/joshuaott/icra2022/trace_hist_gcb_ISRS.csv",  trace_hist_gcb, ',')
+			writedlm( "/Users/joshuaott/icra2022/trace_hist_basic_ISRS.csv",  trace_hist_basic, ',')
+		end
+	end
 end
 
 
-solver_test_isrs("test", good_prob=0.5)
+solver_test_isrs("test", good_prob=0.5, total_budget = 100.0, use_ssh_dir=true, plot_results=false, log_trace_rmse = true)

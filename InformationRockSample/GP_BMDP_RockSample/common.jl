@@ -308,7 +308,7 @@ function POMDPs.action(p::MultimodalIPPGreedyPolicy, b::BS) where {BS <: WorldBe
         end
     end
 
-    return possible_actions[rand(length(possible_actions))]
+    return possible_actions[rand(p.rng, length(possible_actions))]
 end
 
 
@@ -344,7 +344,7 @@ function POMDPs.action(p::MultimodalIPPGreedyPolicy, s::S) where {S <: WorldStat
         end
     end
 
-    return possible_actions[rand(length(possible_actions))]
+    return possible_actions[rand(p.rng, length(possible_actions))]
 end
 
 
