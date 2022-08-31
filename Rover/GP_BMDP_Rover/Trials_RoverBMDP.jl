@@ -168,7 +168,6 @@ end
 
 
 function get_gp_bmdp_policy(bmdp, rng, max_depth=20, queries = 100)
-
 	planner = solve(MCTS.DPWSolver(depth=max_depth, n_iterations=queries, rng=rng, k_state=0.5, k_action=10000.0, alpha_state=0.5), bmdp)
 	# planner = solve(MCTSSolver(depth=max_depth, n_iterations=queries, rng=rng), bmdp)
 

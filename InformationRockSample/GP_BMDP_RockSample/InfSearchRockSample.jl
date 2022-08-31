@@ -244,7 +244,7 @@ function POMDPs.isterminal(pomdp::ISRSPOMDP, s::ISRSWorldState)
     init_idx = LinearIndices(pomdp.map_size)[pomdp.init_pos[1], pomdp.init_pos[2]]
 
     # to exit we have to go back to the starting location
-    if s.cost_expended + pomdp.shortest_paths[s.current, init_idx] >= pomdp.cost_budget
+    if s.cost_expended + pomdp.shortest_paths[s.current, init_idx] > pomdp.cost_budget
         return true
     elseif s.current == init_idx #&& length(s.visited) > 1
         neighbors = Graphs.neighbors(pomdp.env.location_graph, init_idx)
@@ -264,7 +264,7 @@ function POMDPs.isterminal(pomdp::ISRSPOMDP, b::WorldBeliefState)
     init_idx = LinearIndices(pomdp.map_size)[pomdp.init_pos[1], pomdp.init_pos[2]]
 
     # to exit we have to go back to the starting location
-    if b.cost_expended + pomdp.shortest_paths[b.current, init_idx] >= pomdp.cost_budget
+    if b.cost_expended + pomdp.shortest_paths[b.current, init_idx] > pomdp.cost_budget
         return true
     elseif b.current == init_idx #&& length(b.visited) > 1
         neighbors = Graphs.neighbors(pomdp.env.location_graph, init_idx)
