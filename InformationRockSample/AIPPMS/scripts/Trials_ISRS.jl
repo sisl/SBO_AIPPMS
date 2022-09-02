@@ -1,5 +1,7 @@
 # using MultimodalIPP
 include("/Users/joshuaott/icra2022/GP_AIPPMS/InformationRockSample/AIPPMS/src/MultimodalIPP.jl")
+#include("/home/jott2/GP_AIPPMS/InformationRockSample/AIPPMS/src/MultimodalIPP.jl")
+
 using Graphs
 using Random
 using BasicPOMCP
@@ -28,14 +30,13 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
     pomcp_gcb_rewards = Vector{Float64}(undef, 0)
     pomcp_basic_rewards = Vector{Float64}(undef, 0)
 	pomcpow_rewards = Vector{Float64}(undef, 0)
-	pomcpdpw_rewards = Vector{Float64}(undef, 0)
 
 	rmse_hist_gcb = []
 	trace_hist_gcb = []
 	rmse_hist_basic = []
 	trace_hist_basic = []
-	rmse_hist_pomcpdpw = []
-	trace_hist_pomcpdpw = []
+	rmse_hist_pomcpow = []
+	trace_hist_pomcpow = []
 
 
 	total_planning_time_gcb = 0
@@ -47,8 +48,6 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
 	total_planning_time_pomcpow = 0
 	total_plans_pomcpow = 0
 
-	total_planning_time_pomcpdpw = 0
-	total_plans_pomcpdpw = 0
 
     i = 1
     idx = 1
@@ -126,7 +125,13 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
 		pomcpow_reward, state_hist, location_states_hist, action_hist, obs_hist, reward_hist, total_reward_hist, planning_time, num_plans = graph_trial(rng, pomdp, pomcpow_policy, pomcp_isterminal)
 		total_planning_time_pomcpow += planning_time
 		total_plans_pomcpow += num_plans
-		# plot_trial(state_hist, location_states_hist, action_hist, total_reward_hist, i, "pomcpow")
+		if log_trace_rmse
+				rmse_hist_pomcpow = vcat(rmse_hist_pomcpow, [calculate_rmse_along_traj(pomdp, location_states_hist, state_hist, action_hist, obs_hist, total_reward_hist, reward_hist, i)])
+				trace_hist_pomcpow = vcat(trace_hist_pomcpow, [calculate_trace_Σ(pomdp, location_states_hist, state_hist, action_hist, obs_hist, total_reward_hist, reward_hist, i)])		
+		end
+		if plot_results
+			plot_trial(state_hist, location_states_hist, action_hist, total_reward_hist, i, "pomcpow")
+		end
 		@show pomcpow_reward
 
 		try
@@ -191,8 +196,10 @@ function solver_test_isrs(pref::String;good_prob::Float64=0.5, num_rocks::Int64=
 		if use_ssh_dir
 			writedlm( "/home/jott2/figures/rmse_hist_gcb_ISRS.csv",  rmse_hist_gcb, ',')
 			writedlm( "/home/jott2/figures/rmse_hist_basic_ISRS.csv",  rmse_hist_basic, ',')
+			writedlm( "/home/jott2/figures/rmse_hist_pomcpow_ISRS.csv",  rmse_hist_pomcpow, ',')
 			writedlm( "/home/jott2/figures/trace_hist_gcb_ISRS.csv",  trace_hist_gcb, ',')
 			writedlm( "/home/jott2/figures/trace_hist_basic_ISRS.csv",  trace_hist_basic, ',')
+			writedlm( "/home/jott2/figures/trace_hist_pomcpow_ISRS.csv",  trace_hist_pomcpow, ',')
 		else
 			writedlm( "/Users/joshuaott/icra2022/rmse_hist_gcb_ISRS.csv",  rmse_hist_gcb, ',')
 			writedlm( "/Users/joshuaott/icra2022/rmse_hist_basic_ISRS.csv",  rmse_hist_basic, ',')
