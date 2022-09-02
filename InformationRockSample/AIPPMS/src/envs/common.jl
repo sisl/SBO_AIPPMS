@@ -43,10 +43,10 @@ end
 function generate_o(pomdp::P, s::S, a::MultimodalIPPAction, sp::S, rng::RNG) where {P <: POMDPs.POMDP, S <: WorldState, RNG <: AbstractRNG}
     O = obstype(P)
     if a.visit_location != nothing
-        o = O(sp.current, sp.visited, sp.location_states, sp.cost_expended)
+        o = O(sp.current, sp.visited, sp.location_states, sp.cost_expended, 1.0)
     else
-        new_obs_location_states = sample_location_states(pomdp.env, s.current, a.sensing_action, rng)
-        o = O(sp.current, sp.visited, new_obs_location_states, sp.cost_expended)
+        new_obs_location_states, obs_weight = sample_location_states(pomdp.env, s.current, a.sensing_action, rng)
+        o = O(sp.current, sp.visited, new_obs_location_states, sp.cost_expended, obs_weight)
     end
 
     return o
@@ -284,20 +284,32 @@ function get_pomcp_gcb_policy(env, pomdp, budget, rng,  max_depth=20, queries = 
     rollout_policy = MultimodalIPPGreedyPolicy(pomdp, lambda, rng)
     value_estimate = PORollout(rollout_policy, MultimodalIPPBeliefUpdater(pomdp))
     solver = POMCPSolver(rng=rng, estimate_value=value_estimate, max_depth=max_depth, tree_queries = queries)
-    pomcp_policy = solve(solver, pomdp)
+    pomcp_policy = BasicPOMCP.solve(solver, pomdp)
     return b -> action(pomcp_policy, b)
 end
 
 function get_pomcp_basic_policy(env, pomdp, budget, rng, max_depth=20, queries = 100)
-    solver = POMCPSolver(rng=rng, max_depth=max_depth, tree_queries = queries)
-    pomcp_policy = solve(solver, pomdp)
+    solver = POMCPSolver(rng=rng, max_depth=max_depth, tree_queries = queries, c=10.0)
+    pomcp_policy = BasicPOMCP.solve(solver, pomdp)
     return b -> action(pomcp_policy, b)
 end
 
-function get_pomcpow_policy(env, pomdp, budget, rng, max_depth=20, queries = 100)
-    solver = POMCPOWSolver(rng=rng, max_depth=max_depth, tree_queries = queries, criterion=MaxUCB(20.0))
-    pomcpow_policy = solve(solver, pomdp)
+function get_pomcpow_policy(env, pomdp, budget, rng, max_depth=10, queries = 100)
+    lambda = 1.0 
+    rollout_policy = MultimodalIPPGreedyPolicy(pomdp, lambda, rng)
+    value_estimate = PORollout(rollout_policy, MultimodalIPPBeliefUpdater(pomdp))
+
+    solver = POMCPOWSolver(rng=rng, max_depth=max_depth, tree_queries = queries, k_observation=0.5, check_repeat_obs=true, criterion=MaxUCB(1.0), estimate_value=value_estimate)
+    # solver = POMCPOWSolver(rng=rng, max_depth=max_depth, tree_queries = queries, k_observation=0.5, check_repeat_obs=true, criterion=MaxUCB(1.0))
+
+    pomcpow_policy = POMCPOW.solve(solver, pomdp)
     return b -> action(pomcpow_policy, b)
+end
+
+function get_pomcpdpw_policy(env, pomdp, budget, rng, max_depth=20, queries = 100)
+    solver = PDPWSolver(rng=rng, max_depth=max_depth, tree_queries = queries)
+    pomcpdpw_policy = solve(solver, pomdp)
+    return b -> action(pomcpdpw_policy, b)
 end
 
 

@@ -1,5 +1,5 @@
 function plot_trial(state_hist, location_states_hist, action_hist, reward_hist, trial_num, name)
-
+	# NOTE reward_hist is actually total_reward_hist
 
 	loc_states = deepcopy(location_states_hist[1])
 	plot_scale = 1:0.18:10
@@ -44,7 +44,7 @@ function plot_trial(state_hist, location_states_hist, action_hist, reward_hist, 
 		end
 		# println(location_states_hist)
 	end
-	Plots.gif(anim, "/Users/joshuaott/icra2022/figures/AIPPMS/$(name)$(trial_num).gif", fps = 1)
+	Plots.gif(anim, "/home/jott2/figures/AIPPMS/$(name)$(trial_num).gif", fps = 1)
 
 	############################################################################
 	# Just make the plot
@@ -77,7 +77,7 @@ function plot_trial(state_hist, location_states_hist, action_hist, reward_hist, 
 
 	# Agent location
 	plot!([CartesianIndices((10,10))[state_hist[i]].I[1] for i in 1:length(state_hist)],[CartesianIndices((10,10))[state_hist[i]].I[2] for i in 1:length(state_hist)],legend=false, color=:orchid1, linestyle=:dashdotdot, linewidth=2)
-	savefig("/Users/joshuaott/icra2022/figures/AIPPMS/$(name)$(trial_num).pdf")
+	savefig("/home/jott2/figures/AIPPMS/$(name)$(trial_num).pdf")
 
 end
 

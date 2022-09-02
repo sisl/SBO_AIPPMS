@@ -5,34 +5,34 @@ using StatsBase
 
 theme(:dao)
 
-# rmse_hist_gcb = readdlm("/Users/joshuaott/icra2022/figures/rmse_hist_gcb.csv", ',')
-# rmse_hist_basic = readdlm("/Users/joshuaott/icra2022/figures/rmse_hist_basic.csv", ',')
-# rmse_hist_gp_mcts = readdlm("/Users/joshuaott/icra2022/figures/rmse_hist_gp_mcts.csv", ',')
-# rmse_hist_gcb = readdlm("/Users/joshuaott/icra2022/ssh/Rover/budget_100/rmse_hist_gcb.csv", ',')
-# rmse_hist_basic = readdlm("/Users/joshuaott/icra2022/ssh/Rover/budget_100/rmse_hist_basic.csv", ',')
-rmse_hist_gp_mcts = readdlm("/Users/joshuaott/icra2022/rmse_hist_gp_mcts_ISRS.csv", ',')
+rmse_hist_gcb = readdlm("/Users/joshuaott/icra2022/ssh/ISRS/p_075/rmse_hist_gcb_ISRS.csv", ',')
+rmse_hist_basic = readdlm("/Users/joshuaott/icra2022/ssh/ISRS/p_075/rmse_hist_basic_ISRS.csv", ',')
+rmse_hist_gp_mcts = readdlm("/Users/joshuaott/icra2022/ssh/ISRS/p_075/rmse_hist_gp_mcts_ISRS.csv", ',')
+# rmse_hist_gcb = readdlm("/Users/joshuaott/icra2022/ssh/ISRS/p_05/rmse_hist_gcb_ISRS.csv", ',')
+# rmse_hist_basic = readdlm("/Users/joshuaott/icra2022/ssh/ISRS/p_05/rmse_hist_basic_ISRS.csv", ',')
+# rmse_hist_gp_mcts = readdlm("/Users/joshuaott/icra2022/ssh/ISRS/p_05/rmse_hist_gp_mcts_ISRS.csv", ',')
 
-# rmse_hist_gcb_corrected = []
-# for i in 1:size(rmse_hist_gcb)[1]
-# 	tmp_hist = []
-# 	for j in 1:size(rmse_hist_gcb)[2]
-# 		if typeof(rmse_hist_gcb[i,j]) == Float64
-# 			append!(tmp_hist, rmse_hist_gcb[i,j])
-# 		end
-# 	end
-# 	append!(rmse_hist_gcb_corrected, [tmp_hist])
-# end
+rmse_hist_gcb_corrected = []
+for i in 1:size(rmse_hist_gcb)[1]
+	tmp_hist = []
+	for j in 1:size(rmse_hist_gcb)[2]
+		if typeof(rmse_hist_gcb[i,j]) == Float64
+			append!(tmp_hist, rmse_hist_gcb[i,j])
+		end
+	end
+	append!(rmse_hist_gcb_corrected, [tmp_hist])
+end
 
-# rmse_hist_basic_corrected = []
-# for i in 1:size(rmse_hist_basic)[1]
-# 	tmp_hist = []
-# 	for j in 1:size(rmse_hist_basic)[2]
-# 		if typeof(rmse_hist_basic[i,j]) == Float64
-# 			append!(tmp_hist, rmse_hist_basic[i,j])
-# 		end
-# 	end
-# 	append!(rmse_hist_basic_corrected, [tmp_hist])
-# end
+rmse_hist_basic_corrected = []
+for i in 1:size(rmse_hist_basic)[1]
+	tmp_hist = []
+	for j in 1:size(rmse_hist_basic)[2]
+		if typeof(rmse_hist_basic[i,j]) == Float64
+			append!(tmp_hist, rmse_hist_basic[i,j])
+		end
+	end
+	append!(rmse_hist_basic_corrected, [tmp_hist])
+end
 
 # rmse_hist_raster_corrected = []
 # for i in 1:size(rmse_hist_raster)[1]
@@ -79,15 +79,15 @@ end
 use_ssh_dir = false
 # trial_names = ["Raster", "GPMCTS-DPW", "POMCP", "POMCP GCB"]
 # trial_names = ["POMCP GCB", "POMCP", "Raster", "GPMCTS-DPW"]
-# trial_names = ["MCTS-DPW", "POMCP", "POMCP-GCB", "Raster"]
-trial_names = ["MCTS-DPW"]
+trial_names = ["MCTS-DPW", "POMCP", "POMCP-GCB"]
+# trial_names = ["MCTS-DPW"]
 
-hists = [rmse_hist_gp_mcts_corrected]
+# hists = [rmse_hist_gp_mcts_corrected]
 
-# hists = [rmse_hist_gp_mcts_corrected, rmse_hist_basic_corrected, rmse_hist_gcb_corrected, rmse_hist_raster_corrected]
+hists = [rmse_hist_gp_mcts_corrected, rmse_hist_basic_corrected, rmse_hist_gcb_corrected]
 # hists = [rmse_hist_raster_corrected, rmse_hist_gp_mcts_corrected, rmse_hist_basic_corrected, rmse_hist_gcb_corrected]
-# colors = [RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073), :black, :green, :red]
-colors = [RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073)]
+colors = [RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073), :black, :green]
+# colors = [RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073)]
 
 # alphas = [0.4, 0.3, 0.2, 0.1]
 
@@ -106,5 +106,7 @@ end
 if use_ssh_dir
 	savefig("/home/jott2/icra2022/figures/RMSE_traj_together.pdf")
 else
-	savefig("/Users/joshuaott/icra2022/RMSE_traj_together.pdf")
+	# savefig("/Users/joshuaott/icra2022/ssh/ISRS/p_05/RMSE_traj_together.pdf")
+	savefig("/Users/joshuaott/icra2022/ssh/ISRS/p_075/RMSE_traj_together.pdf")
+
 end

@@ -228,8 +228,8 @@ function generate_s(pomdp::ISRSPOMDP, s::ISRSWorldState, a::MultimodalIPPAction,
         new_location_states = deepcopy(s.location_states)
 
         # If visited twice, turn good rock bad
-        if a.visit_location in s.visited && s.location_states[a.visit_location] == RSGOOD #NOTE: I believe this is inconsistent with the paper
-        #if s.location_states[a.visit_location] == RSGOOD
+        # if a.visit_location in s.visited && s.location_states[a.visit_location] == RSGOOD #NOTE: I believe this is inconsistent with the paper
+        if s.location_states[a.visit_location] == RSGOOD
             new_location_states[a.visit_location] = RSBAD
         end
 
@@ -247,17 +247,21 @@ function generate_s(pomdp::ISRSPOMDP, s::ISRSWorldState, a::MultimodalIPPAction,
     return sp
 end
 
-# function POMDPs.observation(pomdp::P, s::S, a::MultimodalIPPAction, sp::S) where {P <: POMDPs.POMDP, S <: ISRSWorldState}
-#     O = obstype(P)
-#     if a.visit_location != nothing
-#         o = O(sp.current, sp.visited, sp.location_states, sp.cost_expended)
-#     else
-#         new_obs_location_states = sample_location_states(pomdp.env, s.current, a.sensing_action, pomdp.rng)
-#         o = O(sp.current, sp.visited, new_obs_location_states, sp.cost_expended)
-#     end
-#
-#     return o
-# end
+function POMDPTools.ModelTools.obs_weight(p, s, a, sp, o)
+    return o.obs_weight
+end 
+
+function POMDPs.observation(pomdp::P, s::S, a::MultimodalIPPAction, sp::S) where {P <: POMDPs.POMDP, S <: ISRSWorldState}
+    O = obstype(P)
+    if a.visit_location != nothing
+        o = O(sp.current, sp.visited, sp.location_states, sp.cost_expended, 1.0)
+    else
+        new_obs_location_states, obs_weight = sample_location_states(pomdp.env, s.current, a.sensing_action, pomdp.rng)
+        o = O(sp.current, sp.visited, new_obs_location_states, sp.cost_expended, obs_weight)
+    end
+
+    return o
+end
 
 function POMDPs.gen(pomdp::ISRSPOMDP, s::ISRSWorldState, a::MultimodalIPPAction, rng::RNG) where {RNG <: AbstractRNG}
     sp = generate_s(pomdp, s, a, rng)
@@ -274,6 +278,7 @@ get_state_of_belstate(::Type{ISRSLocationBeliefState}) = ISRS_STATE
 function sample_location_states(env::ISRSEnv, current::Int, sensor::ISRSSensor, rng::RNG) where {RNG <: AbstractRNG}
 
     new_location_states = Vector{ISRS_STATE}(undef, length(env.location_states))
+    obs_weight = 1
 
     for (i, loc) in enumerate(env.location_states)
 
@@ -284,6 +289,7 @@ function sample_location_states(env::ISRSEnv, current::Int, sensor::ISRSSensor, 
             dist = norm(env.location_metadata[current] - env.location_metadata[i])
             prob_correct = 0.5*(1 + 2^(-4*dist/sensor.efficiency)) # TODO: Check
             wrong_loc = (loc == RSGOOD) ? RSBAD : RSGOOD
+            obs_weight *= prob_correct
 
             if rand(rng) < prob_correct
                 new_location_states[i] = loc
@@ -293,7 +299,7 @@ function sample_location_states(env::ISRSEnv, current::Int, sensor::ISRSSensor, 
         end
     end
 
-    return new_location_states
+    return new_location_states, obs_weight
 end
 
 # Utility of visiting location, given what I've visited already
@@ -350,7 +356,9 @@ function belief_update_location_states_visit(env::ISRSEnv, curr_bel_states::Vect
     state_types = @SVector [RSGOOD, RSBAD, RSBEACON, RSNEITHER]
 
     # Set element to 1.0 based on enum
-    new_dist[Int64(env.location_states[current])] = 1.0
+    # JOSH
+    #new_dist[Int64(env.location_states[current])] = 1.0
+    new_dist[2] = 1.0 # we know it becomes bad once we visit 
 
     new_bel_states[current] = ISRSLocationBeliefState(state_types, convert(SVector{4,Float64}, new_dist))
 

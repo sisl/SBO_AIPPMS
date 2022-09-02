@@ -116,6 +116,7 @@ struct WorldObservation{LS}
     obs_visited::Set{Int}
     obs_location_states::Vector{LS}
     obs_cost_expended::Float64
+    obs_weight::Float64
 end
 
 # Functions an environment is expected to implement for
