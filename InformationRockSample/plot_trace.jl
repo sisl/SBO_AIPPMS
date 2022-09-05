@@ -11,6 +11,7 @@ theme(:dao)
 
 trace_hist_gcb = readdlm("/Users/joshuaott/icra2022/ssh/ISRS/p_05/trace_hist_gcb_ISRS.csv", ',')
 trace_hist_basic = readdlm("/Users/joshuaott/icra2022/ssh/ISRS/p_05/trace_hist_basic_ISRS.csv", ',')
+trace_hist_pomcpow = readdlm("/Users/joshuaott/icra2022/ssh/ISRS/p_05/trace_hist_pomcpow_ISRS.csv", ',')
 trace_hist_gp_mcts = readdlm("/Users/joshuaott/icra2022/ssh/ISRS/p_05/trace_hist_gp_mcts_ISRS.csv", ',')
 
 trace_hist_gcb_corrected = []
@@ -35,16 +36,16 @@ for i in 1:size(trace_hist_basic)[1]
 	append!(trace_hist_basic_corrected, [tmp_hist])
 end
 
-# trace_hist_raster_corrected = []
-# for i in 1:size(trace_hist_raster)[1]
-# 	tmp_hist = []
-# 	for j in 1:size(trace_hist_raster)[2]
-# 		if typeof(trace_hist_raster[i,j]) == Float64
-# 			append!(tmp_hist, trace_hist_raster[i,j])
-# 		end
-# 	end
-# 	append!(trace_hist_raster_corrected, [tmp_hist])
-# end
+trace_hist_pomcpow_corrected = []
+for i in 1:size(trace_hist_pomcpow)[1]
+	tmp_hist = []
+	for j in 1:size(trace_hist_pomcpow)[2]
+		if typeof(trace_hist_pomcpow[i,j]) == Float64
+			append!(tmp_hist, trace_hist_pomcpow[i,j])
+		end
+	end
+	append!(trace_hist_pomcpow_corrected, [tmp_hist])
+end
 
 trace_hist_gp_mcts_corrected = []
 for i in 1:size(trace_hist_gp_mcts)[1]
@@ -80,17 +81,17 @@ end
 use_ssh_dir = false
 # trial_names = ["Raster", "GPMCTS-DPW", "POMCP", "POMCP GCB"]
 # trial_names = ["POMCP GCB", "POMCP", "Raster", "GPMCTS-DPW"]
-trial_names = ["MCTS-DPW", "POMCP", "POMCP GCB"]
+trial_names = ["MCTS-DPW", "POMCP", "POMCP-GCB", "POMCPOW-GCB"]
 # trial_names = ["MCTS-DPW"]
 # hists = [trace_hist_gp_mcts_corrected]
 
 
-hists = [trace_hist_gp_mcts_corrected, trace_hist_basic_corrected, trace_hist_gcb_corrected]
+hists = [trace_hist_gp_mcts_corrected, trace_hist_basic_corrected, trace_hist_gcb_corrected, trace_hist_pomcpow_corrected]
 # hists = [trace_hist_raster_corrected, trace_hist_gp_mcts_corrected, trace_hist_basic_corrected, trace_hist_gcb_corrected]
-colors = [RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073), :red, :black]
+colors = [RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073), :black, :green, :red]
 # colors = [RGB{Float64}(0.0,0.6056031611752245,0.9786801175696073)]
 
-alphas = [0.2, 0.1, 0.2]
+alphas = [0.2, 0.2, 0.2, 0.1]
 
 min_length = []
 for hist in hists

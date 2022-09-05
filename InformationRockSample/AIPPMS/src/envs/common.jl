@@ -289,7 +289,7 @@ function get_pomcp_gcb_policy(env, pomdp, budget, rng,  max_depth=20, queries = 
 end
 
 function get_pomcp_basic_policy(env, pomdp, budget, rng, max_depth=20, queries = 100)
-    solver = POMCPSolver(rng=rng, max_depth=max_depth, tree_queries = queries, c=10.0)
+    solver = POMCPSolver(rng=rng, max_depth=max_depth, tree_queries = queries)
     pomcp_policy = BasicPOMCP.solve(solver, pomdp)
     return b -> action(pomcp_policy, b)
 end
