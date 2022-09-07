@@ -37,7 +37,7 @@ We have included their code in this repository for future benchmarking with the 
 Gaussian Process Belief MDP formulation using MCTS-DPW
 
 <p align="center">
-  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rover.gif" width="45%">
+  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rover.gif" width="100%">
 </p>
 
 <p align="center">
