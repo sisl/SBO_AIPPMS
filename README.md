@@ -46,7 +46,7 @@ The animation below shows the posterior mean and variance of the Gaussian proces
   <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rover.gif" width="100%">
 </p>
 
-# Information Rock Sample
+# Information Search RockSample
 
 We also evaluate our method on the Information Search RockSample (ISRS) problem introduced by He et al. and adapted by Choudry et al. ISRS is a variation of the classic RockSample problem. The agent must move through an environment represented as an $n \times n$ grid. Scattered throughout the environment are $k$ rocks with at most one rock in each grid cell. Only some of the rocks are considered to be `good,' meaning that they have some scientific value. The agent receives $+10$ reward for visiting a good rock and $-10$ reward for visiting a bad rock. Once a good rock is visited it becomes bad. The positions of the agent and rocks are known apriori, but visiting a rock is the only way to reveals its true state. 
 
