@@ -39,12 +39,16 @@ Gaussian Process Belief MDP formulation using MCTS-DPW
   <img alt="Mean" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/mean_rover.gif" width="45%">
 &nbsp; &nbsp; &nbsp; &nbsp;
   <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/var_rover.gif" width="45%">
-  &nbsp; &nbsp; &nbsp; &nbsp;
+</p>
+
+<p align="center">
+ &nbsp; &nbsp; &nbsp; &nbsp;
   <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rmse_rover.gif" width="45%">
   &nbsp; &nbsp; &nbsp; &nbsp;
   <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rover.jpg" width="45%">
 </p>
 
+  
 INCLUDE TABLE WITH RESULTS 
 
 POMCP with Random Rollout Policy
