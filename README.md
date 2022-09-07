@@ -35,14 +35,9 @@ We have included their code in this repository for future benchmarking with the 
 # Rover Exploration
 
 Gaussian Process Belief MDP formulation using MCTS-DPW
-<p align="center">
-  <img alt="Mean" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/mean_rover.gif" width="45%">
-&nbsp; &nbsp; &nbsp; &nbsp;
-  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/var_rover.gif" width="45%">
-</p>
 
 <p align="center">
-  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rmse_rover.gif" width="45%">
+  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rover.gif" width="100%">
 </p>
 
 <p align="center">
