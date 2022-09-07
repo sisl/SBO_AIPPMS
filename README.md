@@ -42,12 +42,12 @@ Gaussian Process Belief MDP formulation using MCTS-DPW
 </p>
 
 <p align="center">
- &nbsp; &nbsp; &nbsp; &nbsp;
   <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rmse_rover.gif" width="45%">
-  &nbsp; &nbsp; &nbsp; &nbsp;
-  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rover.jpg" width="45%">
 </p>
 
+<p align="center">
+  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rover.jpg" width="45%">
+</p>
   
 INCLUDE TABLE WITH RESULTS 
 
