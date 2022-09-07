@@ -40,7 +40,7 @@ The environment is modeled as an $n \times n$ grid with $\beta$ unique measureme
 
 For the Rover Exploration problem, we focus on the interplay between the energy budget allotted to the rover and the sensing quality of the spectrometer, where $\sigma_s$ denotes the standard deviation of a Gaussian sensor model. We also include a raster policy that attempts to fully sweep the environment in a raster pattern and evenly distribute its drilling actions along the way. However, the raster policy may not always be able to make it to the goal location in the specified energy budget in which case the rover receives $-\infty$ reward for a mission failure.
 
-The animation below shows the posterior mean and variance of the Gaussian process belief using MCTS-DPW with $sigma_s=0.1$ and an energy budget of $50$. The green dots indicate successful drill locations. Additional results are summarized in the table below.
+The animation below shows the posterior mean and variance of the Gaussian process belief using MCTS-DPW with $\sigma_s=0.1$ and an energy budget of $50$. The green dots indicate successful drill locations. Additional results are summarized in the table below.
 
 <p align="center">
   <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rover.gif" width="100%">
