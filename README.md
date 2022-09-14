@@ -26,8 +26,9 @@ This repository contains the code for the publication
  -->
 
 # Description
+Adaptive Informative Path Planning with Multi-modal Sensing (AIPPMS) considers the problem of an agent equipped with multiple sensors, each with different sensing accuracy and energy costs. The agent’s goal is to explore the environment and gather information subject to its resource constraints in unknown, partially observable environments. Pre-vious work has focused on the less general Adaptive Informative Path Planning (AIPP) problem, which considers only the effect of the agent’s movement on received observations. The AIPPMS problem adds additional complexity by requiring that the agent reasons jointly about the effects of sensing and movement while balancing resource constraints with information objectives.
 
-We compare our formulation of a Gaussian Process Belief MDP using MCTS-DPW with that of the POMDP formulation using POMCP with different rollout policies as first presented in: 
+We formulate the adaptive informative path planning with multimodal sensing (AIPPMS) problem as a belief MDP where the world belief-state is represented as a Gaussian process. We solve the AIPPMS problem through a sequential Bayesian optimization approach using Monte Carlo tree search with Double Progressive Widening (MCTS-DPW) and belief-dependent rewards. We compare our approach with that of the POMDP formulation using POMCP with different rollout policies as first presented in: 
 > Choudhury, Shushman, Nate Gruver, and Mykel J. Kochenderfer. "Adaptive informative path planning with multimodal sensing." Proceedings of the International Conference on Automated Planning and Scheduling. Vol. 30. 2020.
 
 We have included their code in this repository for future benchmarking with the permission of the authors. The code uses the [JuliaPOMDP](https://github.com/JuliaPOMDP/POMDPs.jl) framework. 
@@ -45,6 +46,9 @@ The animation below shows the posterior mean and variance of the Gaussian proces
 <p align="center">
   <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rover.gif" width="100%">
 </p>
+<p align="center">
+  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rover.jpg" width="100%">
+</p>
 
 # Information Search RockSample
 
@@ -56,6 +60,9 @@ The animation below shows the posterior mean and variance of the Gaussian proces
 
 <p align="center">
   <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/isrs.gif" width="100%">
+</p>
+<p align="center">
+  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/isrs.jpg" width="100%">
 </p>
 
 
