@@ -1,7 +1,7 @@
 # Sequential Bayesian Optimization for Adaptive <br /> Informative Path Planning with Multimodal Sensing
 
 
-![](https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/Figure1.jpg)
+![](https://github.com/sisl/SBO_AIPPMS/blob/main/img/Figure1.jpg)
 
 <!--
 # GPAIPPMS
@@ -44,10 +44,10 @@ For the Rover Exploration problem, we focus on the interplay between the energy 
 The animation below shows the posterior mean and variance of the Gaussian process belief using MCTS-DPW with $\sigma_s=0.1$ and an energy budget of $50$. The green dots indicate successful drill locations. Additional results are summarized in the table below.
 
 <p align="center">
-  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rover.gif" width="100%">
+  <img alt="Variance" src="https://github.com/sisl/SBO_AIPPMS/blob/main/img/rover.gif" width="100%">
 </p>
 <p align="center">
-  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rover.jpg" width="100%">
+  <img alt="Variance" src="https://github.com/sisl/SBO_AIPPMS/blob/main/img/rover.jpg" width="100%">
 </p>
 
 # Information Search RockSample
@@ -59,10 +59,10 @@ There are also $b$ beacons scattered throughout the environment. Upon reaching a
 The animation below shows the posterior mean and variance of the Gaussian process belief using MCTS-DPW with $p=0.5$ and an energy budget of $100$. Bad rocks are shown in red, good rocks in green, and beacons in gray. Additional results are summarized in the table below.
 
 <p align="center">
-  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/isrs.gif" width="100%">
+  <img alt="Variance" src="https://github.com/sisl/SBO_AIPPMS/blob/main/img/isrs.gif" width="100%">
 </p>
 <p align="center">
-  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/isrs.jpg" width="100%">
+  <img alt="Variance" src="https://github.com/sisl/SBO_AIPPMS/blob/main/img/isrs.jpg" width="100%">
 </p>
 
 
