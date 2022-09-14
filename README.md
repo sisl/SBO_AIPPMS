@@ -46,6 +46,9 @@ The animation below shows the posterior mean and variance of the Gaussian proces
 <p align="center">
   <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rover.gif" width="100%">
 </p>
+<p align="center">
+  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/rover.jpg" width="100%">
+</p>
 
 # Information Search RockSample
 
@@ -57,6 +60,9 @@ The animation below shows the posterior mean and variance of the Gaussian proces
 
 <p align="center">
   <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/isrs.gif" width="100%">
+</p>
+<p align="center">
+  <img alt="Variance" src="https://github.com/josh0tt/SBO_AIPPMS/blob/main/img/isrs.jpg" width="100%">
 </p>
 
 
