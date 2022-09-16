@@ -33,6 +33,21 @@ We formulate the adaptive informative path planning with multimodal sensing (AIP
 
 We have included their code in this repository for future benchmarking with the permission of the authors. The code uses the [JuliaPOMDP](https://github.com/JuliaPOMDP/POMDPs.jl) framework. 
 
+# Directory Structure
+- InformationRockSample: contains the files for the ISRS problem described below
+  - AIPPMS contains the implementation from Choudhury et al.
+  - GP_BMDP_RockSample contains the code from our implementation
+- Rover: contains the files for the Rover Exploration problem described below
+  - POMDP_Rover contains our implementation of the formulation presented by Choudhury et al.
+  - GP_BMDP_Rover contains the code for our formulation
+    - CustomGP.jl setups the Gaussian process structure
+    - rover_pomdp.jl states.jl beliefs.jl actions.jl observations.jl transitions.jl rewards.jl define the POMDP
+    - belief_mdp.jl converts the POMDP defined above to a belief MDP
+    - Trials_RoverBMDP.jl sets up the environment and executes the experiments. It can be run with (tested in Julia 1.8):
+      ```
+      julia Trails_RoverBDMP.jl
+      ```
+ 
 # Rover Exploration
 
 We introduce a new AIPPMS benchmark problem known as the Rover Exploration problem which is directly inspired by multiple planetary rover exploration missions. The rover begins at a specified starting location and has a set amount of energy available to explore the environment and reach the goal location. The rover is equipped with a spectrometer and a drill. Drilling reveals the true state of the environment at the location the drill sample was taken and as a result, is a more costly action to take from an energy budget perspective. Conversely, the spectrometer provides a noisy observation of the environment and uses less of the energy budget. At each step, the rover can decide whether or not it wants to drill. The rover's goal is to collect as many unique samples as it can while respecting its energy constraints. The rover receives $+1$ reward for drilling a sample that it has not yet seen and $-1$ reward for drilling a sample that it has already previously collected. This AIPPMS problem highlights the importance of taking sensing actions to decrease the uncertainty in the belief state before deciding to drill. 
