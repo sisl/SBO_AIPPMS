@@ -47,7 +47,7 @@ We have included their code in this repository for future benchmarking with the 
     - belief_mdp.jl converts the POMDP defined above to a belief MDP
     - Trials_RoverBMDP.jl sets up the environment and executes the experiments. It can be run with (tested in Julia 1.8):
 ```
-julia Trails_RoverBDMP.jl
+julia Trials_RoverBDMP.jl
 ```
  
 # Rover Exploration
