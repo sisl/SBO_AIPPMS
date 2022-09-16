@@ -34,19 +34,19 @@ We formulate the adaptive informative path planning with multimodal sensing (AIP
 We have included their code in this repository for future benchmarking with the permission of the authors. The code uses the [JuliaPOMDP](https://github.com/JuliaPOMDP/POMDPs.jl) framework. 
 
 # Directory Structure
-- InformationRockSample: contains the files for the ISRS problem described below
-  - AIPPMS contains the implementation from Choudhury et al.
-  - GP_BMDP_RockSample contains the code from our implementation
-- Rover: contains the files for the Rover Exploration problem described below
-  - POMDP_Rover contains our implementation of the formulation presented by Choudhury et al.
-  - GP_BMDP_Rover contains the code for our formulation
+- **InformationRockSample**: contains the files for the ISRS problem described below
+  - **AIPPMS** contains the implementation from Choudhury et al.
+  - **GP_BMDP_RockSample** contains the code from our implementation
+- **Rover**: contains the files for the Rover Exploration problem described below
+  - **POMDP_Rover** contains our implementation of the formulation presented by Choudhury et al.
+  - **GP_BMDP_Rover** contains the code for our formulation
     - CustomGP.jl setups the Gaussian process structure
     - rover_pomdp.jl states.jl beliefs.jl actions.jl observations.jl transitions.jl rewards.jl define the POMDP
     - belief_mdp.jl converts the POMDP defined above to a belief MDP
     - Trials_RoverBMDP.jl sets up the environment and executes the experiments. It can be run with (tested in Julia 1.8):
-      ```
-      julia Trails_RoverBDMP.jl
-      ```
+```
+julia Trails_RoverBDMP.jl
+```
  
 # Rover Exploration
 
