@@ -26,7 +26,7 @@ This repository contains the code for the publication
  -->
 
 # Description
-A video describing our work can be found [here](https://www.youtube.com/watch?v=J_FIYPvFkNY) and the paper can be found [here](https://arxiv.org/abs/2209.07660).
+Repository for the 2023 ICRA paper "Sequential Bayesian Optimization for Adaptive Informative Path Planning with Multimodal Sensing." A video describing our work can be found [here](https://www.youtube.com/watch?v=J_FIYPvFkNY) and the paper can be found [here](https://arxiv.org/abs/2209.07660).
 
 Adaptive Informative Path Planning with Multi-modal Sensing (AIPPMS) considers the problem of an agent equipped with multiple sensors, each with different sensing accuracy and energy costs. The agent’s goal is to explore the environment and gather information subject to its resource constraints in unknown, partially observable environments. Pre-vious work has focused on the less general Adaptive Informative Path Planning (AIPP) problem, which considers only the effect of the agent’s movement on received observations. The AIPPMS problem adds additional complexity by requiring that the agent reasons jointly about the effects of sensing and movement while balancing resource constraints with information objectives.
 
