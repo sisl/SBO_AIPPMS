@@ -1,3 +1,5 @@
+[![arXiv](https://img.shields.io/badge/SBO_AIPPMS:%20arXiv-2306.00249-b31b1b.svg)](https://arxiv.org/abs/2209.07660)
+
 # Sequential Bayesian Optimization for Adaptive <br /> Informative Path Planning with Multimodal Sensing
 
 
